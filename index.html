@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Inventario de Piso - Manchiche</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -93,9 +94,15 @@
             display: none;
             background: white;
             box-sizing: border-box;
+            width: 4in;
+            height: 3in;
+            padding: 5px 10px;
+            flex-direction: column;
+            overflow: hidden;
         }
         @media print {
-            @page { size: 4in 3in; margin: 0; }
+            @page { size: 4in 3in; margin: 0mm; }
+            html, body { margin: 0; padding: 0; }
             body * { visibility: hidden; }
             #label-template, #label-template * { visibility: visible; }
             #label-template {
@@ -105,6 +112,7 @@
                 display: flex; flex-direction: column;
                 padding: 5px 10px;
                 border: none;
+                overflow: hidden; /* Evita que el contenido salte a una segunda página */
             }
             /* Ajustes de fuente para etiqueta pequeña */
             #printFardo, #printM2 { font-size: 1.4rem !important; }
@@ -247,6 +255,13 @@
     }
 
     function agregarFardo() {
+        // 1. Auto-agregar línea pendiente si el usuario olvidó darle al "+"
+        const pzsInput = document.getElementById('newPiezas');
+        const largoInput = document.getElementById('newLargo');
+        if (pzsInput.value && largoInput.value) {
+            agregarLinea();
+        }
+
         if (currentDetalles.length === 0) {
             alert("Debes agregar al menos una línea de detalle (Piezas/Largo/Ancho)");
             return;
@@ -313,8 +328,12 @@
             const totalPiezas = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
             const item = document.createElement('div');
             item.className = 'row-item';
-            item.innerHTML = `<span>Fardo: ${f.fardoNo} (${totalPiezas} pzs - ${f.m2} m2)</span> 
-                             <button onclick="imprimir(${index})" style="width:auto; padding:5px; margin:0;">Imprimir</button>`;
+            item.innerHTML = `
+                <span>Fardo: ${f.fardoNo} (${totalPiezas} pzs - ${f.m2} m2)</span> 
+                <div style="display:flex; gap:5px;">
+                    <button onclick="imprimir(${index})" class="btn-small" style="width:auto;">Print</button>
+                    <button onclick="guardarImagen(${index})" class="btn-small" style="background:#3498db; width:auto;">Img</button>
+                </div>`;
             lista.appendChild(item);
         });
     }
@@ -351,6 +370,30 @@
         const f = fardosData[index];
         prepararEtiqueta(f);
         window.print();
+    }
+
+    function guardarImagen(index) {
+        const f = fardosData[index];
+        prepararEtiqueta(f);
+        
+        const label = document.getElementById('label-template');
+        
+        // Mostrar temporalmente para la captura con estilos correctos
+        label.style.display = 'flex';
+        label.style.position = 'fixed';
+        label.style.zIndex = '9999';
+        label.style.top = '0';
+        label.style.left = '0';
+        
+        html2canvas(label, { scale: 2 }).then(canvas => {
+            label.style.display = 'none'; // Ocultar
+            
+            // Descargar imagen
+            const link = document.createElement('a');
+            link.download = `Fardo_${f.fardoNo}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
     }
 
     function exportarExcel() {
