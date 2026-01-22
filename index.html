@@ -79,6 +79,39 @@
             display: flex;
             justify-content: space-between;
         }
+        
+        /* Estilos para la tabla de detalles */
+        .detail-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .detail-table th { background: #eee; padding: 5px; font-size: 0.8rem; text-align: left; }
+        .detail-table td { padding: 5px; border-bottom: 1px solid #ddd; }
+        .detail-table input { margin: 0; padding: 8px; }
+        .btn-small { padding: 8px; margin: 0; width: auto; background: var(--accent); color: white; }
+        .btn-del { background: #e74c3c; color: white; width: auto; padding: 5px 10px; margin: 0; }
+
+        /* Estilo de la Etiqueta para Impresión (4x3 pulgadas) */
+        #label-template {
+            display: none;
+            background: white;
+            box-sizing: border-box;
+        }
+        @media print {
+            @page { size: 4in 3in; margin: 0; }
+            body * { visibility: hidden; }
+            #label-template, #label-template * { visibility: visible; }
+            #label-template {
+                position: fixed;
+                left: 0; top: 0;
+                width: 4in; height: 3in;
+                display: flex; flex-direction: column;
+                padding: 5px 10px;
+                border: none;
+            }
+            /* Ajustes de fuente para etiqueta pequeña */
+            #printFardo, #printM2 { font-size: 1.4rem !important; }
+            #printProducto { font-size: 1.1rem !important; }
+            .print-col-header { border-bottom: 1px solid #000; margin-bottom: 2px; font-size: 0.9rem; }
+            .print-val { font-size: 1rem; }
+        }
     </style>
 </head>
 <body>
@@ -99,31 +132,40 @@
             <option value="Piso Crudo">Piso Crudo</option>
         </select>
 
-        <div class="grid-2">
-            <div>
-                <label>Grosor</label>
-                <select id="grosor">
-                    <option value="3/4">3/4"</option>
-                    <option value="1/2">1/2"</option>
-                </select>
-            </div>
-            <div>
-                <label>Ancho</label>
-                <input type="text" id="ancho" value="5" placeholder="5 pulgadas">
-            </div>
-        </div>
+        <label>Grosor</label>
+        <select id="grosor">
+            <option value="3/4">3/4"</option>
+            <option value="1/2">1/2"</option>
+        </select>
+
+        <label>Ancho</label>
+        <input type="number" id="ancho" value="5" placeholder="5 pulgadas">
 
         <label>Especie</label>
         <input type="text" id="especie" value="Manchiche">
 
         <hr>
-        <p style="font-size: 0.8rem; color: #666;">Detalle de Piezas:</p>
-        <div id="detalle-piezas">
-            <div class="grid-2">
-                <input type="number" id="tempPiezas" placeholder="Piezas">
-                <input type="number" id="tempLargos" placeholder="Largo (ft)">
-            </div>
-        </div>
+        <p style="font-size: 0.8rem; color: #666;">Detalle de Piezas (Agrega varias filas):</p>
+        
+        <table class="detail-table">
+            <thead>
+                <tr>
+                    <th width="30%">Piezas</th>
+                    <th width="30%">Largo (ft)</th>
+                    <th width="40%">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tablaDetallesBody">
+                <!-- Filas dinámicas -->
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td><input type="number" id="newPiezas" placeholder="Pzs"></td>
+                    <td><input type="number" id="newLargo" placeholder="Ft"></td>
+                    <td><button class="btn-small" onclick="agregarLinea()">+</button></td>
+                </tr>
+            </tfoot>
+        </table>
         
         <button class="btn-add" onclick="agregarFardo()">GUARDAR FARDO EN LOTE</button>
     </div>
@@ -136,38 +178,98 @@
 </div>
 
 <div id="label-template">
-    <table border="1" style="width:100%; border-collapse: collapse;">
-        <tr>
-            <td id="printFardo" style="font-weight:bold; font-size: 20px;">Fardo No. ---</td>
-            <td id="printM2" style="font-weight:bold; font-size: 20px;">--- M2</td>
-        </tr>
-        <tr>
-            <td colspan="2" id="printProducto" style="padding: 10px; font-size: 18px;">Piso ---</td>
-        </tr>
-        <tr>
-            <td colspan="2" id="printEspecie">Especie: ---</td>
-        </tr>
-    </table>
-    <div style="display: flex; justify-content: space-around; margin-top: 10px;">
-        <div id="printPiezasCol"><b>Piezas</b></div>
-        <div id="printLargosCol"><b>Largos</b></div>
+    <!-- Diseño optimizado para 4x3 pulgadas -->
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid black; padding-bottom: 5px; margin-bottom: 5px;">
+        <span id="printFardo" style="font-weight:bold; font-size: 1.2rem;">Fardo #---</span>
+        <span id="printM2" style="font-weight:bold; font-size: 1.2rem;">--- M2</span>
+    </div>
+    
+    <div style="text-align:center; margin-bottom: 8px;">
+        <div id="printProducto" style="font-weight:bold; font-size: 1rem;">Producto ---</div>
+        <div id="printEspecie" style="font-size: 0.9rem;">Especie: ---</div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; flex-grow: 1;">
+        <div style="width:48%; text-align:center;">
+            <div class="print-col-header"><b>Piezas</b></div>
+            <div id="printPiezasCol"></div>
+        </div>
+        <div style="width:48%; text-align:center;">
+            <div class="print-col-header"><b>Largos (ft)</b></div>
+            <div id="printLargosCol"></div>
+        </div>
     </div>
 </div>
 
 <script>
     let fardosData = [];
+    let currentDetalles = [];
+
+    function agregarLinea() {
+        const pzs = document.getElementById('newPiezas').value;
+        const largo = document.getElementById('newLargo').value;
+
+        if (!pzs || !largo) {
+            alert("Ingresa Piezas y Largo");
+            return;
+        }
+
+        currentDetalles.push({
+            piezas: parseInt(pzs),
+            largo: parseFloat(largo)
+        });
+
+        // Limpiar inputs
+        document.getElementById('newPiezas').value = '';
+        document.getElementById('newLargo').value = '';
+        document.getElementById('newPiezas').focus();
+
+        renderDetalles();
+    }
+
+    function renderDetalles() {
+        const tbody = document.getElementById('tablaDetallesBody');
+        tbody.innerHTML = "";
+        currentDetalles.forEach((d, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${d.piezas}</td>
+                <td>${d.largo}</td>
+                <td><button class="btn-del" onclick="eliminarLinea(${index})">X</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function eliminarLinea(index) {
+        currentDetalles.splice(index, 1);
+        renderDetalles();
+    }
 
     function agregarFardo() {
+        if (currentDetalles.length === 0) {
+            alert("Debes agregar al menos una línea de detalle (Piezas/Largo/Ancho)");
+            return;
+        }
+
+        const anchoGlobal = parseFloat(document.getElementById('ancho').value) || 0;
+
+        // Calcular M2 Total
+        // Formula aprox: Piezas * Largo(ft) * 0.3048 * Ancho(in) * 0.0254
+        let totalM2 = 0;
+        currentDetalles.forEach(d => {
+            totalM2 += d.piezas * (d.largo * 0.3048) * (anchoGlobal * 0.0254);
+        });
+
         const fardo = {
             lote: document.getElementById('loteId').value,
             fardoNo: document.getElementById('fardoNo').value,
             producto: document.getElementById('producto').value,
             grosor: document.getElementById('grosor').value,
-            ancho: document.getElementById('ancho').value,
+            ancho: anchoGlobal,
             especie: document.getElementById('especie').value,
-            piezas: document.getElementById('tempPiezas').value,
-            largos: document.getElementById('tempLargos').value,
-            m2: (document.getElementById('tempPiezas').value * 0.12).toFixed(2) // Cálculo de ejemplo
+            detalles: [...currentDetalles], // Copia del array
+            m2: totalM2.toFixed(2)
         };
 
         if(!fardo.lote || !fardo.fardoNo) {
@@ -176,30 +278,73 @@
         }
 
         fardosData.push(fardo);
+        
+        // Resetear detalles
+        currentDetalles = [];
+        renderDetalles();
+        
+        // Auto-incrementar Fardo No.
+        const inputFardo = document.getElementById('fardoNo');
+        const nextFardo = parseInt(inputFardo.value) + 1;
+        if (!isNaN(nextFardo)) inputFardo.value = nextFardo;
+        
         actualizarLista();
-        prepararEtiqueta(fardo);
+        imprimir(fardosData.length - 1); // Imprimir automáticamente
     }
 
     function actualizarLista() {
         const lista = document.getElementById('listaFardos');
         const displayLote = document.getElementById('displayLote');
+        const loteActual = document.getElementById('loteId').value;
+
         lista.innerHTML = "";
         
+        // Calcular totales del lote actual
+        const fardosDelLote = fardosData.filter(f => f.lote === loteActual);
+        const totalM2 = fardosDelLote.reduce((acc, f) => acc + parseFloat(f.m2), 0);
+        
+        if (loteActual) {
+            displayLote.innerHTML = `${loteActual} <br><small>(${fardosDelLote.length} Fardos - ${totalM2.toFixed(2)} m²)</small>`;
+        } else {
+            displayLote.innerText = "---";
+        }
+        
         fardosData.forEach((f, index) => {
-            displayLote.innerText = f.lote;
+            const totalPiezas = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
             const item = document.createElement('div');
             item.className = 'row-item';
-            item.innerHTML = `<span>Fardo: ${f.fardoNo} (${f.piezas} pzs)</span> 
+            item.innerHTML = `<span>Fardo: ${f.fardoNo} (${totalPiezas} pzs - ${f.m2} m2)</span> 
                              <button onclick="imprimir(${index})" style="width:auto; padding:5px; margin:0;">Imprimir</button>`;
             lista.appendChild(item);
         });
     }
 
     function prepararEtiqueta(f) {
-        document.getElementById('printFardo').innerText = "Fardo No. " + f.fardoNo;
+        document.getElementById('printFardo').innerText = "Fardo #" + f.fardoNo;
         document.getElementById('printM2').innerText = f.m2 + " M2";
+        
         document.getElementById('printProducto').innerText = `${f.producto} ${f.grosor} x ${f.ancho}"`;
         document.getElementById('printEspecie').innerText = "Especie: " + f.especie;
+        
+        // Llenar tabla de impresión
+        const colPiezas = document.getElementById('printPiezasCol');
+        const colLargos = document.getElementById('printLargosCol');
+        
+        // Limpiar contenido previo
+        colPiezas.innerHTML = "";
+        colLargos.innerHTML = "";
+
+        f.detalles.forEach(d => {
+            const pDiv = document.createElement('div');
+            pDiv.className = 'print-val';
+            pDiv.innerText = d.piezas;
+            colPiezas.appendChild(pDiv);
+
+            const lDiv = document.createElement('div');
+            lDiv.className = 'print-val';
+            lDiv.innerText = `${d.largo}'`;
+            colLargos.appendChild(lDiv);
+        });
     }
 
     function imprimir(index) {
@@ -211,7 +356,25 @@
     function exportarExcel() {
         if(fardosData.length === 0) return alert("No hay datos para exportar");
         
-        const worksheet = XLSX.utils.json_to_sheet(fardosData);
+        // Aplanar datos para Excel
+        let flatData = [];
+        fardosData.forEach(f => {
+            f.detalles.forEach(d => {
+                flatData.push({
+                    Lote: f.lote,
+                    Fardo: f.fardoNo,
+                    Producto: f.producto,
+                    Grosor: f.grosor,
+                    Especie: f.especie,
+                    Piezas: d.piezas,
+                    Largo_Ft: d.largo,
+                    Ancho_In: f.ancho,
+                    M2_Total_Fardo: f.m2
+                });
+            });
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(flatData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Inventario");
         
