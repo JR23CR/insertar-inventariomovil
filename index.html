@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Inventario de Piso - Manchiche</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --bg: #f4f7f6;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 15px;
+            color: var(--primary);
+        }
+        .container { max-width: 100%; }
+        h2 { text-align: center; font-size: 1.2rem; }
+        
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .btn-add { background-color: var(--accent); color: white; }
+        .btn-export { background-color: var(--primary); color: white; }
+        .btn-print { background-color: #fff; border: 2px solid var(--primary); color: var(--primary); }
+
+        /* Estilo de la Etiqueta para Impresión */
+        #label-template {
+            display: none;
+            width: 100mm;
+            border: 2px solid black;
+            padding: 10px;
+            text-align: center;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #label-template, #label-template * { visibility: visible; }
+            #label-template { position: absolute; left: 0; top: 0; display: block; }
+        }
+
+        .row-item {
+            background: #eee;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Registro de Inventario</h2>
+    
+    <div class="card">
+        <label>ID de Lote (Agrupador)</label>
+        <input type="text" id="loteId" placeholder="Ej: LOTE-2024-001">
+        
+        <label>Fardo No.</label>
+        <input type="number" id="fardoNo" placeholder="4237">
+
+        <label>Producto</label>
+        <select id="producto">
+            <option value="Piso Barnizado">Piso Barnizado</option>
+            <option value="Piso Crudo">Piso Crudo</option>
+        </select>
+
+        <div class="grid-2">
+            <div>
+                <label>Grosor</label>
+                <select id="grosor">
+                    <option value="3/4">3/4"</option>
+                    <option value="1/2">1/2"</option>
+                </select>
+            </div>
+            <div>
+                <label>Ancho</label>
+                <input type="text" id="ancho" value="5" placeholder="5 pulgadas">
+            </div>
+        </div>
+
+        <label>Especie</label>
+        <input type="text" id="especie" value="Manchiche">
+
+        <hr>
+        <p style="font-size: 0.8rem; color: #666;">Detalle de Piezas:</p>
+        <div id="detalle-piezas">
+            <div class="grid-2">
+                <input type="number" id="tempPiezas" placeholder="Piezas">
+                <input type="number" id="tempLargos" placeholder="Largo (ft)">
+            </div>
+        </div>
+        
+        <button class="btn-add" onclick="agregarFardo()">GUARDAR FARDO EN LOTE</button>
+    </div>
+
+    <div class="card">
+        <h3>Lote Actual: <span id="displayLote">---</span></h3>
+        <div id="listaFardos"></div>
+        <button class="btn-export" onclick="exportarExcel()">EXPORTAR A EXCEL</button>
+    </div>
+</div>
+
+<div id="label-template">
+    <table border="1" style="width:100%; border-collapse: collapse;">
+        <tr>
+            <td id="printFardo" style="font-weight:bold; font-size: 20px;">Fardo No. ---</td>
+            <td id="printM2" style="font-weight:bold; font-size: 20px;">--- M2</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="printProducto" style="padding: 10px; font-size: 18px;">Piso ---</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="printEspecie">Especie: ---</td>
+        </tr>
+    </table>
+    <div style="display: flex; justify-content: space-around; margin-top: 10px;">
+        <div id="printPiezasCol"><b>Piezas</b></div>
+        <div id="printLargosCol"><b>Largos</b></div>
+    </div>
+</div>
+
+<script>
+    let fardosData = [];
+
+    function agregarFardo() {
+        const fardo = {
+            lote: document.getElementById('loteId').value,
+            fardoNo: document.getElementById('fardoNo').value,
+            producto: document.getElementById('producto').value,
+            grosor: document.getElementById('grosor').value,
+            ancho: document.getElementById('ancho').value,
+            especie: document.getElementById('especie').value,
+            piezas: document.getElementById('tempPiezas').value,
+            largos: document.getElementById('tempLargos').value,
+            m2: (document.getElementById('tempPiezas').value * 0.12).toFixed(2) // Cálculo de ejemplo
+        };
+
+        if(!fardo.lote || !fardo.fardoNo) {
+            alert("Por favor llena el Lote y el No. de Fardo");
+            return;
+        }
+
+        fardosData.push(fardo);
+        actualizarLista();
+        prepararEtiqueta(fardo);
+    }
+
+    function actualizarLista() {
+        const lista = document.getElementById('listaFardos');
+        const displayLote = document.getElementById('displayLote');
+        lista.innerHTML = "";
+        
+        fardosData.forEach((f, index) => {
+            displayLote.innerText = f.lote;
+            const item = document.createElement('div');
+            item.className = 'row-item';
+            item.innerHTML = `<span>Fardo: ${f.fardoNo} (${f.piezas} pzs)</span> 
+                             <button onclick="imprimir(${index})" style="width:auto; padding:5px; margin:0;">Imprimir</button>`;
+            lista.appendChild(item);
+        });
+    }
+
+    function prepararEtiqueta(f) {
+        document.getElementById('printFardo').innerText = "Fardo No. " + f.fardoNo;
+        document.getElementById('printM2').innerText = f.m2 + " M2";
+        document.getElementById('printProducto').innerText = `${f.producto} ${f.grosor} x ${f.ancho}"`;
+        document.getElementById('printEspecie').innerText = "Especie: " + f.especie;
+    }
+
+    function imprimir(index) {
+        const f = fardosData[index];
+        prepararEtiqueta(f);
+        window.print();
+    }
+
+    function exportarExcel() {
+        if(fardosData.length === 0) return alert("No hay datos para exportar");
+        
+        const worksheet = XLSX.utils.json_to_sheet(fardosData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Inventario");
+        
+        // Genera el archivo y lo descarga
+        XLSX.writeFile(workbook, `Inventario_Lote_${fardosData[0].lote}.xlsx`);
+    }
+</script>
+
+</body>
+</html>
