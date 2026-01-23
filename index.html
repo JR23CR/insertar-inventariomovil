@@ -481,7 +481,7 @@
         const BOLD_OFF = ESC + "E" + "\x00";
         const CENTER = ESC + "a" + "\x01";
         const LEFT = ESC + "a" + "\x00";
-        const FEED = ESC + "d" + "\x03"; // Avanzar 3 líneas
+        const FEED = ESC + "d" + "\x05"; // Avanzar 5 líneas (más papel al final)
 
         // Construir el texto de la etiqueta
         let data = INIT;
@@ -498,10 +498,22 @@
             data += `${d.piezas.toString().padEnd(6)} ${d.largo}'\n`;
         });
 
-        data += FEED + "\n\n";
+        data += "\n\n"; // Saltos de línea extra
+        data += FEED;   // Comando de avance final
+
+        const encodedData = encoder.encode(data);
+        
+        // IMPORTANTE: Enviar en trozos (chunks) pequeños para Bluetooth LE
+        // Esto evita que la impresora se sature y se detenga a medias
+        const CHUNK_SIZE = 50; 
 
         try {
-            await printCharacteristic.writeValue(encoder.encode(data));
+            for (let i = 0; i < encodedData.length; i += CHUNK_SIZE) {
+                const chunk = encodedData.slice(i, i + CHUNK_SIZE);
+                await printCharacteristic.writeValue(chunk);
+                // Pequeña pausa para no saturar el buffer
+                await new Promise(resolve => setTimeout(resolve, 20));
+            }
         } catch (error) {
             alert("Error enviando datos: " + error);
             // Si falla, intentamos reconectar
