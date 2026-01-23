@@ -487,30 +487,38 @@
         // 2. Dibujar contenido (Coordenadas X, Y)
         // TEXT x,y,"font",rotacion,anchoX,altoY,"texto"
         
-        // Encabezado Grande
-        cmd += `TEXT 30,30,"3",0,1,1,"Fardo #${f.fardoNo}"\r\n`;
-        cmd += `TEXT 450,30,"3",0,1,1,"${f.m2} M2"\r\n`;
+        // --- ENCABEZADO CON CÓDIGO DE BARRAS ---
+        // BARCODE X,Y,"128",height,human_readable,rotation,narrow,wide,"content"
+        // X=220 para centrar aprox en 800 dots (4 pulgadas)
+        cmd += `BARCODE 220,20,"128",70,1,0,2,2,"${f.fardoNo}"\r\n`;
+
+        // Lote (Centrado visualmente) - Fuente 3 (Grande)
+        cmd += `TEXT 220,120,"3",0,1,1,"Lote: ${f.lote}"\r\n`;
+
+        // Fardo y M2 (Distribuidos)
+        cmd += `TEXT 50,160,"3",0,1,1,"Fardo: ${f.fardoNo}"\r\n`;
+        cmd += `TEXT 450,160,"3",0,1,1,"${f.m2} M2"\r\n`;
         
         // Línea separadora
-        cmd += `BAR 30,80, 750, 4\r\n`;
+        cmd += `BAR 30,200, 750, 4\r\n`;
         
         // Detalles del producto
-        cmd += `TEXT 30,100,"2",0,1,1,"${f.producto}"\r\n`;
-        cmd += `TEXT 30,130,"2",0,1,1,"${f.grosor} x ${f.ancho} pulg - ${f.especie}"\r\n`;
+        cmd += `TEXT 50,220,"3",0,1,1,"${f.producto}"\r\n`;
+        cmd += `TEXT 50,260,"3",0,1,1,"${f.grosor} x ${f.ancho} pulg - ${f.especie}"\r\n`;
         
-        cmd += `BAR 30,170, 750, 4\r\n`;
+        cmd += `BAR 30,300, 750, 4\r\n`;
         
         // Tabla de Piezas
-        cmd += `TEXT 30,190,"2",0,1,1,"Piezas"\r\n`;
-        cmd += `TEXT 220,190,"2",0,1,1,"Largo (ft)"\r\n`;
+        cmd += `TEXT 50,320,"3",0,1,1,"Piezas"\r\n`;
+        cmd += `TEXT 300,320,"3",0,1,1,"Largo (ft)"\r\n`;
         
         // Filas dinámicas
-        let y = 220;
+        let y = 360;
         f.detalles.forEach(d => {
             if(y < 580) { // Evitar imprimir fuera de la etiqueta
-                cmd += `TEXT 30,${y},"2",0,1,1,"${d.piezas}"\r\n`;
-                cmd += `TEXT 220,${y},"2",0,1,1,"${d.largo}"\r\n`;
-                y += 30;
+                cmd += `TEXT 50,${y},"3",0,1,1,"${d.piezas}"\r\n`;
+                cmd += `TEXT 300,${y},"3",0,1,1,"${d.largo}"\r\n`;
+                y += 40; // Más espacio entre líneas por fuente más grande
             }
         });
 
