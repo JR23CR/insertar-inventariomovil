@@ -473,35 +473,48 @@
         const f = fardosData[index];
         const encoder = new TextEncoder();
         
-        // Comandos ESC/POS básicos
-        const ESC = "\x1B";
-        const GS = "\x1D";
-        const INIT = ESC + "@";
-        const BOLD_ON = ESC + "E" + "\x01";
-        const BOLD_OFF = ESC + "E" + "\x00";
-        const CENTER = ESC + "a" + "\x01";
-        const LEFT = ESC + "a" + "\x00";
-        const FEED = ESC + "d" + "\x05"; // Avanzar 5 líneas (más papel al final)
-
-        // Construir el texto de la etiqueta
-        let data = INIT;
-        data += CENTER + BOLD_ON + "FARDO #" + f.fardoNo + BOLD_OFF + "\n";
-        data += "M2: " + f.m2 + "\n";
-        data += "--------------------------------\n";
-        data += LEFT + f.producto + "\n";
-        data += f.grosor + " x " + f.ancho + " pulg\n";
-        data += "Especie: " + f.especie + "\n";
-        data += "--------------------------------\n";
-        data += "Pzs   Largo(ft)\n";
+        // --- CAMBIO A LENGUAJE TSPL (Específico para Etiquetas) ---
+        // Si salía en blanco, es porque la impresora esperaba este formato.
         
+        let cmd = "";
+        // 1. Configurar tamaño 4x3 pulgadas
+        cmd += "SIZE 4,3\r\n"; 
+        cmd += "GAP 2 mm,0\r\n"; // Espacio entre etiquetas
+        cmd += "CLS\r\n";        // Limpiar memoria
+        
+        // 2. Dibujar contenido (Coordenadas X, Y)
+        // TEXT x,y,"font",rotacion,anchoX,altoY,"texto"
+        
+        // Encabezado Grande
+        cmd += `TEXT 20,20,"3",0,1,1,"Fardo #${f.fardoNo}"\r\n`;
+        cmd += `TEXT 400,20,"3",0,1,1,"${f.m2} M2"\r\n`;
+        
+        // Línea separadora
+        cmd += `BAR 20,70, 760, 3\r\n`;
+        
+        // Detalles del producto
+        cmd += `TEXT 20,90,"2",0,1,1,"${f.producto}"\r\n`;
+        cmd += `TEXT 20,120,"2",0,1,1,"${f.grosor} x ${f.ancho} pulg - ${f.especie}"\r\n`;
+        
+        cmd += `BAR 20,160, 760, 3\r\n`;
+        
+        // Tabla de Piezas
+        cmd += `TEXT 20,180,"2",0,1,1,"Piezas"\r\n`;
+        cmd += `TEXT 200,180,"2",0,1,1,"Largo (ft)"\r\n`;
+        
+        // Filas dinámicas
+        let y = 210;
         f.detalles.forEach(d => {
-            data += `${d.piezas.toString().padEnd(6)} ${d.largo}'\n`;
+            if(y < 580) { // Evitar imprimir fuera de la etiqueta
+                cmd += `TEXT 20,${y},"2",0,1,1,"${d.piezas}"\r\n`;
+                cmd += `TEXT 200,${y},"2",0,1,1,"${d.largo}"\r\n`;
+                y += 30;
+            }
         });
 
-        data += "\n\n"; // Saltos de línea extra
-        data += FEED;   // Comando de avance final
+        cmd += "PRINT 1\r\n"; // Orden final de imprimir
 
-        const encodedData = encoder.encode(data);
+        const encodedData = encoder.encode(cmd);
         
         // IMPORTANTE: Enviar en trozos (chunks) pequeños para Bluetooth LE
         // Esto evita que la impresora se sature y se detenga a medias
