@@ -56,6 +56,7 @@
         .btn-add { background-color: var(--accent); color: white; }
         .btn-export { background-color: var(--primary); color: white; }
         .btn-print { background-color: #fff; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-bt { background-color: #7f8c8d; color: white; margin-bottom: 15px; }
 
         /* Estilo de la Etiqueta para Impresión */
         #label-template {
@@ -127,6 +128,8 @@
 <div class="container">
     <h2>Registro de Inventario</h2>
     
+    <button class="btn-bt" onclick="conectarBluetooth()">📡 CONECTAR IMPRESORA BLUETOOTH (Bluefy)</button>
+
     <div class="card">
         <label>ID de Lote (Agrupador)</label>
         <input type="text" id="loteId" placeholder="Ej: LOTE-2024-001">
@@ -212,6 +215,8 @@
 <script>
     let fardosData = [];
     let currentDetalles = [];
+    let bluetoothDevice;
+    let printCharacteristic;
 
     function agregarLinea() {
         const pzs = document.getElementById('newPiezas').value;
@@ -333,6 +338,7 @@
                 <div style="display:flex; gap:5px;">
                     <button onclick="imprimir(${index})" class="btn-small" style="width:auto;">Print</button>
                     <button onclick="guardarImagen(${index})" class="btn-small" style="background:#3498db; width:auto;">Img</button>
+                    <button onclick="imprimirBluetooth(${index})" class="btn-small" style="background:#e67e22; width:auto;">BT</button>
                 </div>`;
             lista.appendChild(item);
         });
@@ -434,6 +440,73 @@
         
         // Genera el archivo y lo descarga
         XLSX.writeFile(workbook, `Inventario_Lote_${fardosData[0].lote}.xlsx`);
+    }
+
+    // --- Lógica Bluetooth (Web Bluetooth API) ---
+    async function conectarBluetooth() {
+        try {
+            // Solicitar dispositivo (acepta todos para encontrar la MTH)
+            bluetoothDevice = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] // Servicio estándar de impresoras
+            });
+            
+            const server = await bluetoothDevice.gatt.connect();
+            // Intentamos obtener el servicio de impresión estándar
+            const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+            // Característica de escritura estándar
+            printCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+            
+            alert("¡Conectado a " + bluetoothDevice.name + "!");
+        } catch (error) {
+            console.error(error);
+            alert("Error al conectar: " + error + "\n\nAsegúrate de usar Bluefy y tener el Bluetooth encendido.");
+        }
+    }
+
+    async function imprimirBluetooth(index) {
+        if (!printCharacteristic) {
+            alert("Primero debes conectar la impresora (Botón Gris arriba)");
+            return;
+        }
+
+        const f = fardosData[index];
+        const encoder = new TextEncoder();
+        
+        // Comandos ESC/POS básicos
+        const ESC = "\x1B";
+        const GS = "\x1D";
+        const INIT = ESC + "@";
+        const BOLD_ON = ESC + "E" + "\x01";
+        const BOLD_OFF = ESC + "E" + "\x00";
+        const CENTER = ESC + "a" + "\x01";
+        const LEFT = ESC + "a" + "\x00";
+        const FEED = ESC + "d" + "\x03"; // Avanzar 3 líneas
+
+        // Construir el texto de la etiqueta
+        let data = INIT;
+        data += CENTER + BOLD_ON + "FARDO #" + f.fardoNo + BOLD_OFF + "\n";
+        data += "M2: " + f.m2 + "\n";
+        data += "--------------------------------\n";
+        data += LEFT + f.producto + "\n";
+        data += f.grosor + " x " + f.ancho + " pulg\n";
+        data += "Especie: " + f.especie + "\n";
+        data += "--------------------------------\n";
+        data += "Pzs   Largo(ft)\n";
+        
+        f.detalles.forEach(d => {
+            data += `${d.piezas.toString().padEnd(6)} ${d.largo}'\n`;
+        });
+
+        data += FEED + "\n\n";
+
+        try {
+            await printCharacteristic.writeValue(encoder.encode(data));
+        } catch (error) {
+            alert("Error enviando datos: " + error);
+            // Si falla, intentamos reconectar
+            conectarBluetooth();
+        }
     }
 </script>
 
