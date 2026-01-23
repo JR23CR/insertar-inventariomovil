@@ -6,6 +6,7 @@
     <title>Inventario de Piso - Manchiche</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -100,6 +101,8 @@
             padding: 5px 10px;
             flex-direction: column;
             overflow: hidden;
+            align-items: center;
+            text-align: center;
         }
         @media print {
             @page { size: 4in 3in; margin: 0mm; }
@@ -114,6 +117,8 @@
                 padding: 5px 10px;
                 border: none;
                 overflow: hidden; /* Evita que el contenido salte a una segunda página */
+                align-items: center;
+                text-align: center;
             }
             /* Ajustes de fuente para etiqueta pequeña */
             #printFardo, #printM2 { font-size: 1.4rem !important; }
@@ -190,22 +195,25 @@
 
 <div id="label-template">
     <!-- Diseño optimizado para 4x3 pulgadas -->
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid black; padding-bottom: 5px; margin-bottom: 5px;">
-        <span id="printFardo" style="font-weight:bold; font-size: 1.2rem;">Fardo #---</span>
-        <span id="printM2" style="font-weight:bold; font-size: 1.2rem;">--- M2</span>
-    </div>
+    <!-- Código de Barras -->
+    <svg id="barcode"></svg>
     
-    <div style="text-align:center; margin-bottom: 8px;">
-        <div id="printProducto" style="font-weight:bold; font-size: 1rem;">Producto ---</div>
-        <div id="printEspecie" style="font-size: 0.9rem;">Especie: ---</div>
-    </div>
+    <div id="printLote" style="font-weight:bold; font-size: 1.1rem; margin-top: 2px;">Lote: ---</div>
+    <div id="printFardoM2" style="font-weight:bold; font-size: 1rem; margin-bottom: 5px;">Fardo: --- - --- M2</div>
+    
+    <div style="width:100%; border-bottom: 2px solid black; margin-bottom: 5px;"></div>
+    
+    <div id="printProducto" style="font-weight:bold; font-size: 1rem;">Producto ---</div>
+    <div id="printEspecie" style="font-size: 0.9rem;">Especie: ---</div>
+
+    <div style="width:100%; border-bottom: 2px solid black; margin: 5px 0;"></div>
 
     <div style="display: flex; justify-content: space-between; flex-grow: 1;">
-        <div style="width:48%; text-align:center;">
+        <div style="width:48%;">
             <div class="print-col-header"><b>Piezas</b></div>
             <div id="printPiezasCol"></div>
         </div>
-        <div style="width:48%; text-align:center;">
+        <div style="width:48%;">
             <div class="print-col-header"><b>Largos (ft)</b></div>
             <div id="printLargosCol"></div>
         </div>
@@ -345,9 +353,17 @@
     }
 
     function prepararEtiqueta(f) {
-        document.getElementById('printFardo').innerText = "Fardo #" + f.fardoNo;
-        document.getElementById('printM2').innerText = f.m2 + " M2";
+        // Generar Código de Barras
+        JsBarcode("#barcode", f.fardoNo, {
+            format: "CODE128",
+            displayValue: false, // Sin números abajo
+            height: 100,
+            width: 3,
+            margin: 0
+        });
         
+        document.getElementById('printLote').innerText = "Lote: " + f.lote;
+        document.getElementById('printFardoM2').innerText = `Fardo: ${f.fardoNo} - ${f.m2} M2`;
         document.getElementById('printProducto').innerText = `${f.producto} ${f.grosor} x ${f.ancho}"`;
         document.getElementById('printEspecie').innerText = "Especie: " + f.especie;
         
