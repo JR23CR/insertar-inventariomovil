@@ -563,13 +563,17 @@
 
     function prepararEtiqueta(f) {
         // Generar Código de Barras
-        JsBarcode("#barcode", f.fardoNo, {
-            format: "CODE128",
-            displayValue: false, // Sin números abajo
-            height: 40,
-            width: 3,
-            margin: 0
-        });
+        if (typeof JsBarcode !== 'undefined') {
+            try {
+                JsBarcode("#barcode", f.fardoNo, {
+                    format: "CODE128",
+                    displayValue: false,
+                    height: 40,
+                    width: 3,
+                    margin: 0
+                });
+            } catch(e) { console.error(e); }
+        }
         
         document.getElementById('printLote').innerText = "Lote: " + f.lote;
         document.getElementById('printFardoM2').innerText = `Fardo: ${f.fardoNo} - ${f.m2} M2`;
