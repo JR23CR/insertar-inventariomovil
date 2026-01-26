@@ -197,6 +197,10 @@
     <!-- Diseño optimizado para 4x3 pulgadas -->
     <!-- Código de Barras -->
     <svg id="barcode"></svg>
+    <div class="lbl-header">
+        <svg id="barcode"></svg>
+        <div class="lbl-title" id="printFardoTitle">FARDO #---</div>
+    </div>
     
     <div id="printLote" style="font-weight:bold; font-size: 1.1rem; margin-top: 2px;">Lote: ---</div>
     <div id="printFardoM2" style="font-weight:bold; font-size: 1rem; margin-bottom: 5px;">Fardo: --- - --- M2</div>
@@ -212,11 +216,33 @@
         <div style="width:48%;">
             <div class="print-col-header"><b>Piezas</b></div>
             <div id="printPiezasCol"></div>
+    <div class="lbl-grid">
+        <div class="lbl-cell">
+            <span class="lbl-label">LOTE</span>
+            <span class="lbl-value" id="printLote">---</span>
         </div>
         <div style="width:48%;">
-            <div class="print-col-header"><b>Largos (ft)</b></div>
+            <div class="print-col-header"><b>Largos</b></div>
             <div id="printLargosCol"></div>
+        <div class="lbl-cell">
+            <span class="lbl-label">AREA TOTAL</span>
+            <span class="lbl-value-lg" id="printM2">---</span>
         </div>
+    </div>
+
+    <div class="lbl-full-row">
+        <span class="lbl-label">PRODUCTO / ESPECIE</span>
+        <div class="lbl-value" id="printDesc">---</div>
+    </div>
+
+    <div class="lbl-table-header">
+        <div class="lbl-th">PIEZAS</div>
+        <div class="lbl-th">LARGOS</div>
+    </div>
+
+    <div class="lbl-table-body">
+        <div class="lbl-td" id="printPiezasCol"></div>
+        <div class="lbl-td" id="printLargosCol"></div>
     </div>
 </div>
 
@@ -338,7 +364,6 @@
 
             fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
-                mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(dataSheet)
             }).catch(err => console.error("Error enviando a Sheets:", err));
@@ -405,6 +430,10 @@
         document.getElementById('printFardoM2').innerText = `Fardo: ${f.fardoNo} - ${f.m2} M2`;
         document.getElementById('printProducto').innerText = `${f.producto} ${f.grosor} x ${f.ancho}"`;
         document.getElementById('printEspecie').innerText = "Especie: " + f.especie;
+        document.getElementById('printFardoTitle').innerText = "FARDO #" + f.fardoNo;
+        document.getElementById('printLote').innerText = f.lote;
+        document.getElementById('printM2').innerText = f.m2 + " M2";
+        document.getElementById('printDesc').innerText = `${f.producto} - ${f.grosor}x${f.ancho}" - ${f.especie}`;
         
         // Llenar tabla de impresión
         const colPiezas = document.getElementById('printPiezasCol');
@@ -417,12 +446,15 @@
         f.detalles.forEach(d => {
             const pDiv = document.createElement('div');
             pDiv.className = 'print-val';
+            // pDiv.className = 'print-val'; // Ya no se usa clase, hereda de lbl-td
             pDiv.innerText = d.piezas;
             colPiezas.appendChild(pDiv);
 
             const lDiv = document.createElement('div');
             lDiv.className = 'print-val';
             lDiv.innerText = `${d.largo}'`;
+            // lDiv.className = 'print-val';
+            lDiv.innerText = d.largo; // Sin comilla, solo numero
             colLargos.appendChild(lDiv);
         });
     }
@@ -568,7 +600,7 @@
         
         // Tabla de Piezas (Centrar encabezados en sus mitades)
         cmd += `TEXT 150,330,"3",0,1,1,"Piezas"\r\n`;
-        cmd += `TEXT 550,330,"3",0,1,1,"Largo (ft)"\r\n`;
+        cmd += `TEXT 550,330,"3",0,1,1,"Largo"\r\n`;
         
         // Filas dinámicas
         let y = 370;
