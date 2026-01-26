@@ -123,6 +123,26 @@
         });
     }
 
+    function formatearDato(valor) {
+        // Si es una fecha en formato ISO (viene de Google Sheets así)
+        if (typeof valor === 'string' && valor.includes('T') && valor.includes('Z')) {
+            const fecha = new Date(valor);
+            // Devolver en formato local (dd/mm/yyyy)
+            return fecha.toLocaleDateString('es-ES');
+        }
+        return valor;
+    }
+
+    function formatearGrosor(valor) {
+        // Corrección específica para Grosores que Sheets convirtió en fecha (ej: 3/4 -> 03/04/2026)
+        if (typeof valor === 'string' && valor.includes('T') && valor.includes('Z')) {
+            const fecha = new Date(valor);
+            // Extraer solo día y mes para reconstruir la fracción (ej: 3/4)
+            return `${fecha.getDate()}/${fecha.getMonth() + 1}`;
+        }
+        return valor;
+    }
+
     function buscarFardo() {
         const num = document.getElementById('searchFardo').value;
         if(!num) return;
@@ -141,9 +161,9 @@
                     <div class="result-row"><span class="result-label">Lote:</span> <span class="result-val">${fardo['# Lote']}</span></div>
                     <div class="result-row"><span class="result-label">Producto:</span> <span class="result-val">${fardo['Calidad']}</span></div>
                     <div class="result-row"><span class="result-label">Especie:</span> <span class="result-val">${fardo['Especie']}</span></div>
-                    <div class="result-row"><span class="result-label">Medidas:</span> <span class="result-val">${fardo['Grosor "']} x ${fardo['Ancho "']}</span></div>
+                    <div class="result-row"><span class="result-label">Medidas:</span> <span class="result-val">${formatearGrosor(fardo['Grosor "'])} x ${fardo['Ancho "']}</span></div>
                     <div class="result-row"><span class="result-label">M2:</span> <span class="result-val">${fardo['M2']}</span></div>
-                    <div class="result-row"><span class="result-label">Fecha:</span> <span class="result-val">${fardo['Fecha de Ingreso']}</span></div>
+                    <div class="result-row"><span class="result-label">Fecha:</span> <span class="result-val">${formatearDato(fardo['Fecha de Ingreso'])}</span></div>
                 </div>
             `;
             // Sonido de éxito (opcional)
