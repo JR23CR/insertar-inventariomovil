@@ -194,13 +194,8 @@
 </div>
 
 <div id="label-template">
-    <!-- Diseño optimizado para 4x3 pulgadas -->
     <!-- Código de Barras -->
     <svg id="barcode"></svg>
-    <div class="lbl-header">
-        <svg id="barcode"></svg>
-        <div class="lbl-title" id="printFardoTitle">FARDO #---</div>
-    </div>
     
     <div id="printLote" style="font-weight:bold; font-size: 1.1rem; margin-top: 2px;">Lote: ---</div>
     <div id="printFardoM2" style="font-weight:bold; font-size: 1rem; margin-bottom: 5px;">Fardo: --- - --- M2</div>
@@ -212,37 +207,15 @@
 
     <div style="width:100%; border-bottom: 2px solid black; margin: 5px 0;"></div>
 
-    <div style="display: flex; justify-content: space-between; flex-grow: 1;">
+    <div style="display: flex; justify-content: space-between; flex-grow: 1; width: 100%;">
         <div style="width:48%;">
             <div class="print-col-header"><b>Piezas</b></div>
             <div id="printPiezasCol"></div>
-    <div class="lbl-grid">
-        <div class="lbl-cell">
-            <span class="lbl-label">LOTE</span>
-            <span class="lbl-value" id="printLote">---</span>
         </div>
         <div style="width:48%;">
-            <div class="print-col-header"><b>Largos</b></div>
+            <div class="print-col-header"><b>Largo</b></div>
             <div id="printLargosCol"></div>
-        <div class="lbl-cell">
-            <span class="lbl-label">AREA TOTAL</span>
-            <span class="lbl-value-lg" id="printM2">---</span>
         </div>
-    </div>
-
-    <div class="lbl-full-row">
-        <span class="lbl-label">PRODUCTO / ESPECIE</span>
-        <div class="lbl-value" id="printDesc">---</div>
-    </div>
-
-    <div class="lbl-table-header">
-        <div class="lbl-th">PIEZAS</div>
-        <div class="lbl-th">LARGOS</div>
-    </div>
-
-    <div class="lbl-table-body">
-        <div class="lbl-td" id="printPiezasCol"></div>
-        <div class="lbl-td" id="printLargosCol"></div>
     </div>
 </div>
 
@@ -364,9 +337,12 @@
 
             fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                // IMPORTANTE: No usar header Content-Type application/json para evitar preflight CORS
+                // Google Apps Script lo recibirá como texto plano y lo parseará igual.
                 body: JSON.stringify(dataSheet)
-            }).catch(err => console.error("Error enviando a Sheets:", err));
+            })
+            .then(res => console.log("Enviado a Sheets"))
+            .catch(err => alert("Error enviando a Sheets: " + err));
         });
 
         fardosData.push(fardo);
@@ -430,10 +406,6 @@
         document.getElementById('printFardoM2').innerText = `Fardo: ${f.fardoNo} - ${f.m2} M2`;
         document.getElementById('printProducto').innerText = `${f.producto} ${f.grosor} x ${f.ancho}"`;
         document.getElementById('printEspecie').innerText = "Especie: " + f.especie;
-        document.getElementById('printFardoTitle').innerText = "FARDO #" + f.fardoNo;
-        document.getElementById('printLote').innerText = f.lote;
-        document.getElementById('printM2').innerText = f.m2 + " M2";
-        document.getElementById('printDesc').innerText = `${f.producto} - ${f.grosor}x${f.ancho}" - ${f.especie}`;
         
         // Llenar tabla de impresión
         const colPiezas = document.getElementById('printPiezasCol');
