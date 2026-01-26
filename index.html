@@ -459,43 +459,13 @@
         // --- SINCRONIZACIÓN CON GOOGLE SHEETS ---
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJm67IZXi_zHsxQv3mqosqb6-RyKp4-j-h-kqdP153HTN8t6lt7BPE5BrwSzphArkx/exec";
         
-        // Convertir grosor a decimal para cálculos (P2, M3)
-        const grosorMap = { "3/4": 0.75, "1/2": 0.5 };
-        const grosorVal = grosorMap[fardo.grosor] || 0;
-
-        fardo.detalles.forEach(d => {
-            // Cálculos por fila para enviar a Sheets
-            const m2Row = d.piezas * (d.largo * 0.3048) * (fardo.ancho * 0.0254);
-            const p2Row = (d.piezas * grosorVal * fardo.ancho * d.largo) / 12;
-
-            const dataSheet = {
-                "Especie": fardo.especie,
-                "Calidad": fardo.producto,
-                "Dimensiones": `${fardo.grosor} x ${fardo.ancho}`,
-                "# Lote": fardo.lote,
-                "C": "", 
-                "# Fardo": fardo.fardoNo,
-                "Grosor \"": fardo.grosor,
-                "Ancho \"": fardo.ancho,
-                "Piezas": d.piezas,
-                "Largo": d.largo,
-                "M2": m2Row.toFixed(2),
-                "P2": p2Row.toFixed(2),
-                "PL": (d.piezas * d.largo),
-                "ML": (d.piezas * d.largo * 0.3048).toFixed(2),
-                "M3": (m2Row * grosorVal * 0.0254).toFixed(3),
-                "Fecha de Ingreso": new Date().toLocaleDateString("es-ES")
-            };
-
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                // IMPORTANTE: No usar header Content-Type application/json para evitar preflight CORS
-                // Google Apps Script lo recibirá como texto plano y lo parseará igual.
-                body: JSON.stringify(dataSheet)
-            })
-            .then(res => console.log("Enviado a Sheets"))
-            .catch(err => alert("Error enviando a Sheets: " + err));
-        });
+        // Enviar el objeto fardo completo. El script de Google se encargará de borrar los anteriores y poner los nuevos.
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify(fardo)
+        })
+        .then(res => console.log("Enviado a Sheets"))
+        .catch(err => alert("Error enviando a Sheets: " + err));
 
         fardosData.push(fardo);
         
