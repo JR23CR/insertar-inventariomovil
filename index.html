@@ -42,12 +42,13 @@
             font-size: 1rem;
         }
 
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+        .compact-input { padding: 8px; font-size: 0.9rem; height: 38px; }
 
         button {
             width: 100%;
-            padding: 15px;
-            margin-top: 15px;
+            padding: 10px;
+            margin-top: 10px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
@@ -126,6 +127,41 @@
             .print-col-header { border-bottom: 1px solid #000; margin-bottom: 2px; font-size: 0.9rem; }
             .print-val { font-size: 1rem; }
         }
+
+        /* Estilos para Slider Horizontal (Páginas) */
+        .slider-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+            gap: 10px;
+            padding-bottom: 5px;
+        }
+        .slider-container::-webkit-scrollbar { display: none; }
+        
+        .slider-page {
+            min-width: 100%;
+            scroll-snap-align: center;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 botones por fila */
+            grid-auto-rows: min-content;
+            gap: 8px;
+        }
+        
+        .quick-btn {
+            padding: 15px 0;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none; /* Evita zoom/selección al tocar rápido */
+            touch-action: manipulation;
+        }
+        .quick-btn.active { background-color: var(--accent); color: white; border-color: var(--accent); }
+        .quick-btn:active { transform: scale(0.95); background-color: #ddd; }
     </style>
 </head>
 <body>
@@ -136,51 +172,77 @@
     <button class="btn-bt" onclick="conectarBluetooth()">📡 CONECTAR IMPRESORA BLUETOOTH (Bluefy)</button>
 
     <div class="card">
-        <label>ID de Lote (Agrupador)</label>
-        <input type="text" id="loteId" placeholder="Ej: LOTE-2024-001">
-        
-        <label>Fardo No.</label>
-        <input type="number" id="fardoNo" placeholder="4237">
+        <div class="grid-3">
+            <div>
+                <label>Lote</label>
+                <input type="text" id="loteId" class="compact-input" placeholder="Lote">
+            </div>
+            <div>
+                <label>Fardo</label>
+                <input type="number" id="fardoNo" class="compact-input" placeholder="#">
+            </div>
+            <div>
+                <label>Ancho</label>
+                <input type="number" id="ancho" value="5" class="compact-input">
+            </div>
+        </div>
 
-        <label>Producto</label>
-        <select id="producto">
-            <option value="Piso Barnizado">Piso Barnizado</option>
-            <option value="Piso Crudo">Piso Crudo</option>
-        </select>
-
-        <label>Grosor</label>
-        <select id="grosor">
-            <option value="3/4">3/4"</option>
-            <option value="1/2">1/2"</option>
-        </select>
-
-        <label>Ancho</label>
-        <input type="number" id="ancho" value="5" placeholder="5 pulgadas">
-
-        <label>Especie</label>
-        <input type="text" id="especie" value="Manchiche">
+        <div class="grid-3">
+            <div>
+                <label>Grosor</label>
+                <select id="grosor" class="compact-input">
+                    <option value="3/4">3/4"</option>
+                    <option value="1/2">1/2"</option>
+                </select>
+            </div>
+            <div>
+                <label>Producto</label>
+                <select id="producto" class="compact-input">
+                    <option value="Piso Barnizado">Barnizado</option>
+                    <option value="Piso Crudo">Crudo</option>
+                </select>
+            </div>
+            <div>
+                <label>Especie</label>
+                <input type="text" id="especie" value="Manchiche" class="compact-input">
+            </div>
+        </div>
 
         <hr>
-        <p style="font-size: 0.8rem; color: #666;">Detalle de Piezas (Agrega varias filas):</p>
         
+        <!-- PANEL TÁCTIL (Sin Teclado) -->
+        <div style="margin-bottom: 15px;">
+            <label style="color:var(--accent);">1. Selecciona Piezas (Desliza ↔):</label>
+            <div id="quick-piezas" class="slider-container"></div>
+            
+            <label style="color:var(--accent); margin-top:10px;">2. Toca Largo para AGREGAR (Desliza ↔):</label>
+            <div id="quick-largos" class="slider-container"></div>
+        </div>
+
+        <hr>
+
+        <!-- Entrada Rápida -->
+        <div style="background: #e8f6f3; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+            <label style="margin-top:0; color: var(--accent);">AGREGAR PIEZAS (Enter para agregar)</label>
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <input type="number" id="newPiezas" class="compact-input" placeholder="Pzs" style="flex:1;">
+                <span style="font-weight:bold;">x</span>
+                <input type="number" id="newLargo" class="compact-input" placeholder="Largo" style="flex:1;">
+                <button class="btn-small" onclick="agregarLinea()" style="width:auto; height:38px; margin:0;">➕</button>
+            </div>
+        </div>
+
         <table class="detail-table">
             <thead>
                 <tr>
-                    <th width="30%">Piezas</th>
-                    <th width="30%">Largo (ft)</th>
-                    <th width="40%">Acción</th>
+                    <th>Piezas</th>
+                    <th>Largo</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="tablaDetallesBody">
                 <!-- Filas dinámicas -->
             </tbody>
-            <tfoot>
-                <tr>
-                    <td><input type="number" id="newPiezas" placeholder="Pzs"></td>
-                    <td><input type="number" id="newLargo" placeholder="Ft"></td>
-                    <td><button class="btn-small" onclick="agregarLinea()">+</button></td>
-                </tr>
-            </tfoot>
         </table>
         
         <button class="btn-add" onclick="agregarFardo()">GUARDAR FARDO EN LOTE</button>
@@ -224,8 +286,91 @@
     let currentDetalles = [];
     let bluetoothDevice;
     let printCharacteristic;
+    let selectedPiezas = 1; // Valor por defecto para botones rápidos
 
-    function agregarLinea() {
+    // Cargar datos guardados al iniciar la página
+    window.onload = function() {
+        const guardado = localStorage.getItem('inventario_fardos');
+        if (guardado) {
+            fardosData = JSON.parse(guardado);
+            actualizarLista();
+        }
+        // Recuperar último lote y número de fardo
+        if(localStorage.getItem('last_lote')) document.getElementById('loteId').value = localStorage.getItem('last_lote');
+        if(localStorage.getItem('last_fardo')) document.getElementById('fardoNo').value = localStorage.getItem('last_fardo');
+        
+        // Eventos para entrada rápida con Enter
+        document.getElementById('newPiezas').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') document.getElementById('newLargo').focus();
+        });
+
+        document.getElementById('newLargo').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') agregarLinea();
+        });
+
+        renderQuickButtons();
+    };
+
+    function renderQuickButtons() {
+        // Piezas: 1 a 12 (Páginas de 4)
+        const piezasItems = [];
+        for(let i=1; i<=12; i++) {
+            piezasItems.push({ label: i, value: i, active: i === selectedPiezas });
+        }
+        
+        createSlider('quick-piezas', piezasItems, 4, (val, btn) => {
+            selectedPiezas = val;
+            document.getElementById('newPiezas').value = val;
+            // Actualizar visualmente
+            document.querySelectorAll('#quick-piezas .quick-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+
+        // Largos: 1 a 7 con incrementos de 0.25 (Páginas de 8)
+        const largosItems = [];
+        for(let k=4; k<=28; k++) {
+            let val = k / 4;
+            largosItems.push({ label: val + "'", value: val });
+        }
+        
+        createSlider('quick-largos', largosItems, 8, (val, btn) => {
+            document.getElementById('newLargo').value = val;
+            document.getElementById('newPiezas').value = selectedPiezas;
+            agregarLinea(true);
+            
+            // Feedback visual al tocar
+            const originalBg = btn.style.backgroundColor;
+            btn.style.backgroundColor = '#27ae60';
+            btn.style.color = 'white';
+            setTimeout(() => {
+                btn.style.backgroundColor = originalBg;
+                btn.style.color = '';
+            }, 150);
+        });
+    }
+
+    function createSlider(containerId, items, itemsPerPage, onClick) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+
+        for (let i = 0; i < items.length; i += itemsPerPage) {
+            const pageItems = items.slice(i, i + itemsPerPage);
+            const page = document.createElement('div');
+            page.className = 'slider-page';
+            
+            pageItems.forEach(item => {
+                const btn = document.createElement('div');
+                btn.className = 'quick-btn';
+                if (item.active) btn.classList.add('active');
+                btn.innerText = item.label;
+                btn.onclick = () => onClick(item.value, btn);
+                page.appendChild(btn);
+            });
+            container.appendChild(page);
+        }
+    }
+
+    function agregarLinea(fromQuickButton = false) {
         const pzs = document.getElementById('newPiezas').value;
         const largo = document.getElementById('newLargo').value;
 
@@ -242,7 +387,14 @@
         // Limpiar inputs
         document.getElementById('newPiezas').value = '';
         document.getElementById('newLargo').value = '';
-        document.getElementById('newPiezas').focus();
+        
+        // Solo poner foco (abrir teclado) si NO viene de los botones rápidos
+        if (!fromQuickButton) {
+            document.getElementById('newPiezas').focus();
+        } else {
+            // Si viene de botón rápido, restaurar el valor visual de piezas seleccionado
+            document.getElementById('newPiezas').value = selectedPiezas;
+        }
 
         renderDetalles();
     }
@@ -347,6 +499,9 @@
 
         fardosData.push(fardo);
         
+        // Guardar en memoria local
+        guardarDatosLocales();
+        
         // Resetear detalles
         currentDetalles = [];
         renderDetalles();
@@ -356,8 +511,16 @@
         const nextFardo = parseInt(inputFardo.value) + 1;
         if (!isNaN(nextFardo)) inputFardo.value = nextFardo;
         
+        // Guardar estado de inputs para que no se pierdan al recargar
+        localStorage.setItem('last_lote', document.getElementById('loteId').value);
+        localStorage.setItem('last_fardo', inputFardo.value);
+        
         actualizarLista();
         imprimir(fardosData.length - 1); // Imprimir automáticamente
+    }
+
+    function guardarDatosLocales() {
+        localStorage.setItem('inventario_fardos', JSON.stringify(fardosData));
     }
 
     function actualizarLista() {
@@ -387,9 +550,45 @@
                     <button onclick="imprimir(${index})" class="btn-small" style="width:auto;">Print</button>
                     <button onclick="guardarImagen(${index})" class="btn-small" style="background:#3498db; width:auto;">Img</button>
                     <button onclick="imprimirBluetooth(${index})" class="btn-small" style="background:#e67e22; width:auto;">BT</button>
+                    <button onclick="editarFardo(${index})" class="btn-small" style="background:#f1c40f; width:auto; margin-left:5px;">✏️</button>
+                    <button onclick="eliminarFardo(${index})" class="btn-del" style="width:auto; margin-left:5px;">🗑️</button>
                 </div>`;
             lista.appendChild(item);
         });
+    }
+
+    function eliminarFardo(index) {
+        if(confirm("¿Estás seguro de borrar el Fardo #" + fardosData[index].fardoNo + "?")) {
+            fardosData.splice(index, 1);
+            guardarDatosLocales();
+            actualizarLista();
+        }
+    }
+
+    function editarFardo(index) {
+        if(!confirm("¿Editar este fardo? Se moverá al formulario para que hagas cambios.")) return;
+
+        const f = fardosData[index];
+        
+        // Cargar datos en los inputs
+        document.getElementById('loteId').value = f.lote;
+        document.getElementById('fardoNo').value = f.fardoNo;
+        document.getElementById('producto').value = f.producto;
+        document.getElementById('grosor').value = f.grosor;
+        document.getElementById('ancho').value = f.ancho;
+        document.getElementById('especie').value = f.especie;
+        
+        // Cargar detalles
+        currentDetalles = [...f.detalles];
+        renderDetalles();
+        
+        // Eliminar de la lista (para que al guardar no se duplique)
+        fardosData.splice(index, 1);
+        guardarDatosLocales();
+        actualizarLista();
+        
+        // Scroll hacia arriba para editar
+        document.querySelector('.container').scrollIntoView({behavior: 'smooth'});
     }
 
     function prepararEtiqueta(f) {
