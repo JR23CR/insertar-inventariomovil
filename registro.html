@@ -282,7 +282,9 @@
 </div>
 
 <script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJm67IZXi_zHsxQv3mqosqb6-RyKp4-j-h-kqdP153HTN8t6lt7BPE5BrwSzphArkx/exec";
     let fardosData = [];
+    let inventarioRemoto = [];
     let currentDetalles = [];
     let bluetoothDevice;
     let printCharacteristic;
@@ -293,7 +295,6 @@
         const guardado = localStorage.getItem('inventario_fardos');
         if (guardado) {
             fardosData = JSON.parse(guardado);
-            actualizarLista();
         }
         // Recuperar último lote y número de fardo
         if(localStorage.getItem('last_lote')) document.getElementById('loteId').value = localStorage.getItem('last_lote');
@@ -309,7 +310,27 @@
         });
 
         renderQuickButtons();
+        
+        // Cargar base de datos remota y configurar listener de Lote
+        cargarInventarioRemoto();
+        document.getElementById('loteId').addEventListener('input', actualizarLista);
+        
+        // Render inicial
+        actualizarLista();
     };
+
+    function cargarInventarioRemoto() {
+        fetch(GOOGLE_SCRIPT_URL)
+        .then(response => response.json())
+        .then(data => {
+            inventarioRemoto = data;
+            console.log("Inventario remoto cargado: " + data.length + " fardos.");
+            actualizarLista(); // Actualizar lista por si ya hay un lote escrito
+        })
+        .catch(error => {
+            console.error("Error cargando inventario remoto:", error);
+        });
+    }
 
     function renderQuickButtons() {
         // Piezas: 1 a 12 (Páginas de 4)
@@ -456,8 +477,12 @@
                 return;
             }
 
+            if (verificarDuplicado(fardo.fardoNo)) {
+                alert("⚠️ EL FARDO #" + fardo.fardoNo + " YA EXISTE (en local o en la base de datos).");
+                return;
+            }
+
             // --- SINCRONIZACIÓN CON GOOGLE SHEETS ---
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJm67IZXi_zHsxQv3mqosqb6-RyKp4-j-h-kqdP153HTN8t6lt7BPE5BrwSzphArkx/exec";
             
             // Enviar el objeto fardo completo.
             fetch(GOOGLE_SCRIPT_URL, {
@@ -500,6 +525,16 @@
         localStorage.setItem('inventario_fardos', JSON.stringify(fardosData));
     }
 
+    function verificarDuplicado(numero) {
+        // 1. Verificar en sesión local
+        const enLocal = fardosData.some(f => String(f.fardoNo) === String(numero));
+        // 2. Verificar en base de datos remota
+        // Nota: Las claves del JSON de Google Sheets suelen ser '# Fardo'
+        const enRemoto = inventarioRemoto.some(f => String(f['# Fardo']) === String(numero));
+        
+        return enLocal || enRemoto;
+    }
+
     function actualizarLista() {
         const lista = document.getElementById('listaFardos');
         const displayLote = document.getElementById('displayLote');
@@ -507,17 +542,41 @@
 
         lista.innerHTML = "";
         
-        // Calcular totales del lote actual
-        const fardosDelLote = fardosData.filter(f => f.lote === loteActual);
-        const totalM2 = fardosDelLote.reduce((acc, f) => acc + parseFloat(f.m2), 0);
+        // Filtrar Locales y Remotos por Lote
+        const locales = fardosData.filter(f => String(f.lote) === String(loteActual));
+        const remotos = inventarioRemoto.filter(f => String(f['# Lote']) === String(loteActual));
+
+        // Calcular totales combinados
+        let totalM2 = 0;
+        let count = 0;
+
+        locales.forEach(f => { totalM2 += parseFloat(f.m2) || 0; count++; });
+        remotos.forEach(f => { totalM2 += parseFloat(f['M2']) || 0; count++; });
         
         if (loteActual) {
-            displayLote.innerHTML = `${loteActual} <br><small>(${fardosDelLote.length} Fardos - ${totalM2.toFixed(2)} m²)</small>`;
+            displayLote.innerHTML = `${loteActual} <br><small>(${count} Fardos - ${totalM2.toFixed(2)} m²)</small>`;
         } else {
             displayLote.innerText = "---";
         }
         
+        // 1. Mostrar Fardos Remotos (Base de Datos) - Solo lectura
+        remotos.forEach(f => {
+            const item = document.createElement('div');
+            item.className = 'row-item';
+            item.style.backgroundColor = '#eafaf1'; // Verde muy claro
+            item.style.borderLeft = '4px solid #27ae60';
+            item.innerHTML = `
+                <span>☁️ Fardo: ${f['# Fardo']} (${f['M2']} m²)</span>
+                <span style="font-size:0.8rem; color:#666;">${f['Calidad'] || ''}</span>
+            `;
+            lista.appendChild(item);
+        });
+
+        // 2. Mostrar Fardos Locales (Sesión actual) - Editables
         fardosData.forEach((f, index) => {
+            // Solo mostrar si coincide con el lote actual
+            if (String(f.lote) !== String(loteActual)) return;
+
             const totalPiezas = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
             
             const item = document.createElement('div');
