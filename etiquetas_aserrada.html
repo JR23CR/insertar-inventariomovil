@@ -167,6 +167,7 @@
                 <div class="lbl-detail" id="lbl-especie">ESPECIE</div>
                 <div class="lbl-detail" id="lbl-calidad">CALIDAD</div>
                 <div class="lbl-detail" id="lbl-dims">GROSOR - CONDICION</div>
+                <div class="lbl-detail" id="lbl-extra">POA - FECHA</div>
                 
                 <div class="lbl-grid">
                     <div class="lbl-col">
@@ -241,16 +242,25 @@
                 totalPT += parseFloat(f['PIES TABLARES']) || 0;
             });
 
+            // Formatear fecha
+            let fechaRaw = head['Fecha de ingreso'];
+            let fechaFmt = fechaRaw;
+            if(fechaRaw && typeof fechaRaw === 'string' && fechaRaw.includes('T')) {
+                fechaFmt = new Date(fechaRaw).toLocaleDateString();
+            }
+
             // Guardar datos actuales para agregar a cola
             currentBultoData = {
                 idCode: head['ID CODE'] || `${head['POA']}-${head['FARDO']}`,
                 fardo: head['FARDO'],
                 especie: head['ESPECIE'],
                 calidad: head['CALIDAD'],
-                dims: `Grosor: ${head['GROSOR']} - ${head['CONDICION']}`,
+                grosor: head['GROSOR'],
+                condicion: head['CONDICION'],
+                poa: head['POA'],
+                fecha: fechaFmt,
                 pt: Math.round(totalPT),
                 pzs: totalPiezas,
-                fecha: head['Fecha de ingreso'],
                 ubicacion: head['UBICACION']
             };
 
@@ -258,7 +268,8 @@
             document.getElementById('lbl-idcode').innerText = currentBultoData.idCode;
             document.getElementById('lbl-especie').innerText = currentBultoData.especie;
             document.getElementById('lbl-calidad').innerText = currentBultoData.calidad;
-            document.getElementById('lbl-dims').innerText = currentBultoData.dims;
+            document.getElementById('lbl-dims').innerText = `Grosor: ${currentBultoData.grosor} - Cond: ${currentBultoData.condicion}`;
+            document.getElementById('lbl-extra').innerText = `POA: ${currentBultoData.poa} - Fecha: ${currentBultoData.fecha}`;
             document.getElementById('lbl-pt').innerText = currentBultoData.pt;
             document.getElementById('lbl-pzs').innerText = currentBultoData.pzs;
             document.getElementById('lbl-bulto-header').innerText = `#${currentBultoData.fardo}`;
@@ -339,7 +350,8 @@
                 labelClone.querySelector('#lbl-idcode').innerText = item.idCode;
                 labelClone.querySelector('#lbl-especie').innerText = item.especie;
                 labelClone.querySelector('#lbl-calidad').innerText = item.calidad;
-                labelClone.querySelector('#lbl-dims').innerText = item.dims;
+                labelClone.querySelector('#lbl-dims').innerText = `Grosor: ${item.grosor} - Cond: ${item.condicion}`;
+                labelClone.querySelector('#lbl-extra').innerText = `POA: ${item.poa} - Fecha: ${item.fecha}`;
                 labelClone.querySelector('#lbl-pt').innerText = item.pt;
                 labelClone.querySelector('#lbl-pzs').innerText = item.pzs;
                 
@@ -401,7 +413,8 @@
 
                 // --- ENCABEZADO ---
                 cmd += `TEXT 40,30,"3",0,1,1,"MADERA ASERRADA"\r\n`;
-                cmd += `TEXT 620,20,"4",0,1,1,"#${item.fardo}"\r\n`;
+                // Ajustado X a 500 para evitar que se corte si el número es largo
+                cmd += `TEXT 500,20,"4",0,1,1,"#${item.fardo}"\r\n`;
                 
                 // --- CÓDIGO DE BARRAS CENTRADO ---
                 // Usamos 2,4 para asegurar que quepa si el código es largo (el ejemplo usaba 3,6)
@@ -413,7 +426,12 @@
                 // --- DETALLES DE ESPECIE ---
                 cmd += `TEXT 40,260,"3",0,1,1,"Especie: ${item.especie}"\r\n`;
                 cmd += `TEXT 40,310,"3",0,1,1,"Calidad: ${item.calidad}"\r\n`;
-                cmd += `TEXT 40,360,"3",0,1,1,"${item.dims}"\r\n`;
+                
+                // Grosor y Condición en la misma línea
+                cmd += `TEXT 40,350,"3",0,1,1,"Grosor: ${item.grosor}"\r\n`;
+                cmd += `TEXT 400,350,"3",0,1,1,"Cond: ${item.condicion}"\r\n`;
+                // POA y Fecha en la siguiente línea
+                cmd += `TEXT 40,390,"3",0,1,1,"POA: ${item.poa}  Fecha: ${item.fecha}"\r\n`;
 
                 // --- SEPARADOR INFERIOR ---
                 cmd += `BAR 40,420,730,4\r\n`;
