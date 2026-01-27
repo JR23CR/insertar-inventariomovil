@@ -774,57 +774,62 @@
         const f = fardosData[index];
         const encoder = new TextEncoder();
         
-        // --- CAMBIO A LENGUAJE TSPL (Específico para Etiquetas) ---
-        // Si salía en blanco, es porque la impresora esperaba este formato.
-        
         let cmd = "";
-        // 1. Configurar tamaño 4x3 pulgadas
-        cmd += "SIZE 4,3\r\n"; 
-        cmd += "GAP 2 mm,0\r\n"; // Espacio entre etiquetas
-        cmd += "DIRECTION 1\r\n"; // Dirección de impresión
-        cmd += "CLS\r\n";        // Limpiar memoria
-        cmd += "DENSITY 12\r\n"; // <--- IMPORTANTE: Aumentar oscuridad (0-15)
-        
-        // 2. Dibujar contenido (Coordenadas X, Y)
-        // TEXT x,y,"font",rotacion,anchoX,altoY,"texto"
-        
-        // --- CÓDIGO DE BARRAS (Centrado, Más largo, Sin números) ---
-        // BARCODE X,Y,"128",height,human_readable,rotation,narrow,wide,"content"
-        // human_readable=0 (Quitar número)
-        // height=100 (Más alto)
-        // narrow=3, wide=3 (Más ancho/largo horizontalmente)
-        // X=150 (Ajustado para centrar el código más ancho)
-        cmd += `BARCODE 150,20,"128",60,0,0,3,3,"${f.fardoNo}"\r\n`;
+        // Configuración 4x4 pulgadas (según tu plantilla)
+        cmd += "SIZE 4,4\r\n"; 
+        cmd += "GAP 0.12,0\r\n";
+        cmd += "DIRECTION 1\r\n";
+        cmd += "CLS\r\n";
+        cmd += "DENSITY 12\r\n";
 
-        // Lote (Centrado aprox)
-        cmd += `TEXT 280,130,"3",0,1,1,"Lote: ${f.lote}"\r\n`;
+        // --- MARCO EXTERIOR ---
+        cmd += "BOX 10, 10, 790, 790, 3\r\n";
 
-        // Fardo y M2 (Centrados en una línea)
-        cmd += `TEXT 180,170,"3",0,1,1,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`;
+        // --- ENCABEZADO ---
+        // Barcode centrado (X=220 aprox para ancho 4")
+        cmd += `BARCODE 220,30,"128",45,1,0,2,2,"${f.fardoNo}"\r\n`;
         
-        // Línea separadora
-        cmd += `BAR 30,210, 750, 4\r\n`;
+        // Lote y Fardo
+        cmd += `TEXT 320,90,"3",0,1,1,"Lote: ${f.lote}"\r\n`;
+        cmd += `TEXT 200,135,"3",0,1,1,"FARDO: ${f.fardoNo}   -   ${f.m2} M2"\r\n`;
         
-        // Detalles del producto (Centrado aprox)
-        cmd += `TEXT 250,230,"3",0,1,1,"${f.producto}"\r\n`;
-        // Especie y medidas
-        cmd += `TEXT 150,270,"3",0,1,1,"${f.grosor} x ${f.ancho} pulg - ${f.especie}"\r\n`;
+        cmd += `BAR 10, 185, 780, 2\r\n`;
+
+        // --- PRODUCTO ---
+        cmd += `TEXT 50,210,"3",0,1,1,"${f.producto}"\r\n`;
+        cmd += `TEXT 50,250,"3",0,1,1,"${f.grosor} x ${f.ancho} pulg  -  ${f.especie}"\r\n`;
         
-        cmd += `BAR 30,310, 750, 4\r\n`;
+        cmd += `BAR 10, 290, 780, 2\r\n`;
+
+        // --- ENCABEZADO DE TABLA ---
+        cmd += `TEXT 100,315,"3",0,1,1,"LARGO"\r\n`;
+        cmd += `TEXT 400,315,"3",0,1,1,"PIEZAS"\r\n`;
+        cmd += `TEXT 700,315,"3",0,1,1,"M2"\r\n`;
         
-        // Tabla de Piezas (Centrar encabezados en sus mitades)
-        cmd += `TEXT 150,330,"3",0,1,1,"Piezas"\r\n`;
-        cmd += `TEXT 550,330,"3",0,1,1,"Largo"\r\n`;
-        
-        // Filas dinámicas
+        cmd += `BAR 10, 345, 780, 1\r\n`;
+
+        // --- DATOS DE LA TABLA ---
         let y = 370;
+        const anchoVal = parseFloat(f.ancho) || 0;
+        
         f.detalles.forEach(d => {
-            if(y < 580) { // Evitar imprimir fuera de la etiqueta
-                cmd += `TEXT 170,${y},"3",0,1,1,"${d.piezas}"\r\n`;
-                cmd += `TEXT 570,${y},"3",0,1,1,"${d.largo}"\r\n`;
-                y += 40; // Más espacio entre líneas por fuente más grande
+            if(y < 510) { // Limite antes de totales
+                // Calcular M2 por línea
+                const m2Linea = (d.piezas * (d.largo * 0.3048) * (anchoVal * 0.0254)).toFixed(2);
+                
+                cmd += `TEXT 100,${y},"3",0,1,1,"${d.largo}"\r\n`;
+                cmd += `TEXT 400,${y},"3",0,1,1,"${d.piezas}"\r\n`;
+                cmd += `TEXT 700,${y},"3",0,1,1,"${m2Linea}"\r\n`;
+                y += 35;
             }
         });
+
+        // --- TOTALES ---
+        cmd += `BAR 10, 520, 780, 2\r\n`;
+        
+        const totalPiezas = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
+        cmd += `TEXT 60,550,"3",0,1,1,"TOTAL PIEZAS: ${totalPiezas}"\r\n`;
+        cmd += `TEXT 450,550,"3",0,1,1,"TOTAL: ${f.m2} M2"\r\n`;
 
         cmd += "PRINT 1\r\n"; // Orden final de imprimir
 
