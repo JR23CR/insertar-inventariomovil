@@ -413,8 +413,8 @@
 
                 // --- ENCABEZADO ---
                 cmd += `TEXT 40,30,"3",0,1,1,"MADERA ASERRADA"\r\n`;
-                // Ajustado X a 500 para evitar que se corte si el número es largo
-                cmd += `TEXT 500,20,"4",0,1,1,"#${item.fardo}"\r\n`;
+                // Usamos fuente "3" escalada (3,3) en lugar de "4" para evitar el cuadro negro
+                cmd += `TEXT 500,20,"3",0,3,3,"#${item.fardo}"\r\n`;
                 
                 // --- CÓDIGO DE BARRAS CENTRADO ---
                 // Usamos 2,4 para asegurar que quepa si el código es largo (el ejemplo usaba 3,6)
@@ -437,11 +437,11 @@
                 cmd += `BAR 40,420,730,4\r\n`;
 
                 // --- TOTALES EN GRANDE (Jerarquía Visual) ---
-                cmd += `TEXT 40,450,"2",0,1,1,"PIES TABLARES"\r\n`;
-                cmd += `TEXT 40,500,"5",0,1,1,"${item.pt}"\r\n`;
+                cmd += `TEXT 40,450,"2",0,1,1,"PIEZAS"\r\n`;
+                cmd += `TEXT 40,500,"5",0,1,1,"${item.pzs}"\r\n`;
 
-                cmd += `TEXT 550,450,"2",0,1,1,"PIEZAS"\r\n`;
-                cmd += `TEXT 550,500,"5",0,1,1,"${item.pzs}"\r\n`;
+                cmd += `TEXT 450,450,"2",0,1,1,"PIES TABLARES"\r\n`;
+                cmd += `TEXT 450,500,"5",0,1,1,"${item.pt}"\r\n`;
 
                 cmd += "PRINT 1,1\r\n";
 
