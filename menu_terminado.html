@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Selección de Inventario</title>
+    <title>Menú - Producto Terminado</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -25,6 +25,7 @@
         h1 {
             color: var(--primary);
             margin-bottom: 40px;
+            text-align: center;
         }
         .menu-button {
             display: block;
@@ -43,16 +44,19 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             transition: transform 0.2s;
         }
-        .menu-button:active {
-            transform: scale(0.98);
-        }
-        .btn-aserrada { background-color: #8e44ad; }
-        .btn-terminado { background-color: #2980b9; }
+        .menu-button:active { transform: scale(0.98); }
+        .btn-registro { background-color: var(--accent); }
+        .btn-checklist { background-color: #3498db; }
+        .btn-packing { background-color: #e67e22; }
+        .btn-back { background-color: #7f8c8d; margin-top: 30px; }
     </style>
 </head>
 <body>
-    <h1>Selecciona Inventario</h1>
-    <a href="menu_aserrada.html" class="menu-button btn-aserrada">🪵 Madera Aserrada</a>
-    <a href="menu_terminado.html" class="menu-button btn-terminado">📦 Producto Terminado</a>
+    <h1>Inventario Producto Terminado</h1>
+    <a href="registro.html" class="menu-button btn-registro">📝 Registro de Inventario</a>
+    <a href="checklist.html" class="menu-button btn-checklist">✔️ Check List de Fardos</a>
+    <a href="packing.html" class="menu-button btn-packing">📦 Rebajar y Packing List</a>
+    
+    <a href="index.html" class="menu-button btn-back">⬅ Volver al Inicio</a>
 </body>
 </html>

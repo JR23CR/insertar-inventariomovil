@@ -78,7 +78,7 @@
 
     <div id="resultado"></div>
 
-    <a href="index.html"><button class="btn-back">⬅ Volver al Menú</button></a>
+    <a href="menu_terminado.html"><button class="btn-back">⬅ Volver al Menú</button></a>
 </div>
 
 <script>
@@ -99,7 +99,7 @@
         status.innerText = "🔄 Descargando inventario de Google Sheets...";
         status.style.color = "#e67e22";
         
-        fetch(GOOGLE_SCRIPT_URL)
+        fetch(GOOGLE_SCRIPT_URL + "?sheet=PRODUCTO TERMINADO")
         .then(response => {
             if (!response.ok) throw new Error("Error de conexión con Google Sheets");
             return response.text();

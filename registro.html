@@ -253,6 +253,7 @@
         <div id="listaFardos"></div>
         <button class="btn-export" onclick="exportarExcel()">EXPORTAR A EXCEL</button>
     </div>
+    <a href="menu_terminado.html" style="display:block; text-align:center; margin-top:20px; color:#7f8c8d; text-decoration:none; font-weight:bold;">⬅ Volver al Menú</a>
 </div>
 
 <div id="label-template">
@@ -320,7 +321,7 @@
     };
 
     function cargarInventarioRemoto() {
-        fetch(GOOGLE_SCRIPT_URL)
+        fetch(GOOGLE_SCRIPT_URL + "?sheet=PRODUCTO TERMINADO")
         .then(response => response.json())
         .then(data => {
             inventarioRemoto = data;
@@ -469,7 +470,8 @@
                 ancho: anchoGlobal,
                 especie: document.getElementById('especie').value,
                 detalles: [...currentDetalles], // Copia del array
-                m2: totalM2.toFixed(2)
+                m2: totalM2.toFixed(2),
+                sheetName: "PRODUCTO TERMINADO" // Indicamos la hoja destino explícitamente
             };
 
             if(!fardo.lote || !fardo.fardoNo) {
