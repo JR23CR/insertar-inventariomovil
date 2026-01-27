@@ -18,7 +18,7 @@
             padding: 15px;
             color: var(--primary);
         }
-        .container { max-width: 100%; }
+        .container { max-width: 600px; margin: 0 auto; }
         h2 { text-align: center; font-size: 1.2rem; margin-bottom: 20px; }
         
         .card {
@@ -52,6 +52,7 @@
         }
         .btn-search { background-color: var(--accent); color: white; }
         .btn-print { background-color: #2c3e50; color: white; margin-top: 20px; }
+        .btn-add { background-color: #27ae60; color: white; margin-top: 10px; }
         .btn-back { background-color: #7f8c8d; color: white; text-decoration: none; display: block; text-align: center; margin-top: 20px; padding: 12px; border-radius: 8px; }
 
         #status { font-size: 0.9rem; color: #666; margin-bottom: 10px; text-align: center; }
@@ -61,6 +62,7 @@
             display: flex;
             justify-content: center;
             margin-top: 20px;
+            overflow-x: auto;
         }
         
         .label-box {
@@ -76,14 +78,24 @@
             text-align: center;
             position: relative;
             overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        /* Ajuste para pantallas pequeñas (iPhone) */
+        @media screen and (max-width: 400px) {
+            .label-box {
+                transform: scale(0.85);
+                transform-origin: top center;
+                margin-bottom: -40px;
+            }
         }
 
         /* ESTILOS DE IMPRESIÓN (4x3 Pulgadas) */
         @media print {
             @page { size: 4in 3in; margin: 0; }
             body * { visibility: hidden; }
-            #label-preview-container, #label-preview-container * { visibility: visible; }
-            #label-preview-container {
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
                 position: fixed;
                 left: 0; top: 0;
                 width: 100%; height: 100%;
@@ -109,6 +121,13 @@
         .lbl-val { font-size: 1.4rem; font-weight: bold; }
         .lbl-tit { font-size: 0.8rem; text-transform: uppercase; }
         
+        /* Cola de impresión */
+        .queue-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem;
+        }
+        .btn-remove { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; margin: 0; }
+
     </style>
 </head>
 <body>
@@ -120,6 +139,13 @@
             <label style="font-weight:bold;">Número de Bulto</label>
             <input type="text" id="searchBulto" placeholder="Ej: 501">
             <button class="btn-search" onclick="buscarBulto()">BUSCAR ETIQUETA</button>
+        </div>
+
+        <!-- Cola de Impresión -->
+        <div id="queue-container" class="card no-print" style="display:none;">
+            <h3 style="margin-top:0;">Cola de Impresión (<span id="queue-count">0</span>)</h3>
+            <div id="queue-list" style="max-height: 150px; overflow-y: auto; text-align: left; margin-bottom: 10px;"></div>
+            <button class="btn-print" onclick="imprimirCola()">🖨️ IMPRIMIR TODOS</button>
         </div>
 
         <div id="label-preview-container" style="display:none;">
@@ -148,14 +174,19 @@
             </div>
         </div>
 
-        <button id="btnPrint" class="btn-print no-print" style="display:none;" onclick="window.print()">🖨️ IMPRIMIR</button>
+        <button id="btnAdd" class="btn-add no-print" style="display:none;" onclick="agregarACola()">➕ AGREGAR A COLA</button>
 
         <a href="menu_aserrada.html" class="btn-back no-print">⬅ Volver al Menú</a>
     </div>
 
+    <!-- Área oculta para generar las etiquetas al imprimir -->
+    <div id="print-area"></div>
+
     <script>
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJm67IZXi_zHsxQv3mqosqb6-RyKp4-j-h-kqdP153HTN8t6lt7BPE5BrwSzphArkx/exec";
         let inventario = [];
+        let printQueue = [];
+        let currentBultoData = null;
 
         window.onload = function() {
             cargarInventario();
@@ -188,7 +219,7 @@
             if (filas.length === 0) {
                 alert("❌ Bulto no encontrado");
                 document.getElementById('label-preview-container').style.display = 'none';
-                document.getElementById('btnPrint').style.display = 'none';
+                document.getElementById('btnAdd').style.display = 'none';
                 return;
             }
 
@@ -201,13 +232,25 @@
                 totalPT += parseFloat(f['PIES TABLARES']) || 0;
             });
 
+            // Guardar datos actuales para agregar a cola
+            currentBultoData = {
+                idCode: head['ID CODE'] || `${head['POA']}-${head['FARDO']}`,
+                fardo: head['FARDO'],
+                especie: head['ESPECIE'],
+                calidad: head['CALIDAD'],
+                dims: `${head['GROSOR']} - ${head['CONDICION']} - ${head['UBICACION']}`,
+                pt: totalPT.toFixed(2),
+                pzs: totalPiezas,
+                fecha: head['Fecha de ingreso']
+            };
+
             // Llenar datos
-            document.getElementById('lbl-idcode').innerText = head['ID CODE'] || `${head['POA']}-${head['FARDO']}`;
-            document.getElementById('lbl-especie').innerText = head['ESPECIE'];
-            document.getElementById('lbl-calidad').innerText = head['CALIDAD'];
-            document.getElementById('lbl-dims').innerText = `${head['GROSOR']} - ${head['CONDICION']} - ${head['UBICACION']}`;
-            document.getElementById('lbl-pt').innerText = totalPT.toFixed(2);
-            document.getElementById('lbl-pzs').innerText = totalPiezas;
+            document.getElementById('lbl-idcode').innerText = currentBultoData.idCode;
+            document.getElementById('lbl-especie').innerText = currentBultoData.especie;
+            document.getElementById('lbl-calidad').innerText = currentBultoData.calidad;
+            document.getElementById('lbl-dims').innerText = currentBultoData.dims;
+            document.getElementById('lbl-pt').innerText = currentBultoData.pt;
+            document.getElementById('lbl-pzs').innerText = currentBultoData.pzs;
             
             let fecha = head['Fecha de ingreso'];
             if(fecha && fecha.includes('T')) fecha = new Date(fecha).toLocaleDateString();
@@ -223,7 +266,87 @@
             });
 
             document.getElementById('label-preview-container').style.display = 'flex';
-            document.getElementById('btnPrint').style.display = 'block';
+            document.getElementById('btnAdd').style.display = 'block';
+        }
+
+        function agregarACola() {
+            if (!currentBultoData) return;
+            
+            // Verificar si ya está
+            if (printQueue.some(item => item.fardo === currentBultoData.fardo)) {
+                alert("Este bulto ya está en la cola.");
+                return;
+            }
+
+            printQueue.push(currentBultoData);
+            actualizarUICola();
+            
+            // Limpiar búsqueda
+            document.getElementById('searchBulto').value = "";
+            document.getElementById('searchBulto').focus();
+            document.getElementById('label-preview-container').style.display = 'none';
+            document.getElementById('btnAdd').style.display = 'none';
+        }
+
+        function actualizarUICola() {
+            const container = document.getElementById('queue-container');
+            const list = document.getElementById('queue-list');
+            const count = document.getElementById('queue-count');
+            
+            if (printQueue.length > 0) {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+            
+            count.innerText = printQueue.length;
+            list.innerHTML = "";
+            
+            printQueue.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'queue-item';
+                div.innerHTML = `
+                    <span>📦 <b>#${item.fardo}</b> - ${item.especie}</span>
+                    <button class="btn-remove" onclick="removerDeCola(${index})">X</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function removerDeCola(index) {
+            printQueue.splice(index, 1);
+            actualizarUICola();
+        }
+
+        function imprimirCola() {
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = ""; // Limpiar
+
+            printQueue.forEach((item, index) => {
+                // Clonar la estructura de la etiqueta
+                const labelClone = document.getElementById('etiqueta').cloneNode(true);
+                labelClone.id = "print-lbl-" + index;
+                
+                // Actualizar datos en el clon
+                labelClone.querySelector('#lbl-idcode').innerText = item.idCode;
+                labelClone.querySelector('#lbl-especie').innerText = item.especie;
+                labelClone.querySelector('#lbl-calidad').innerText = item.calidad;
+                labelClone.querySelector('#lbl-dims').innerText = item.dims;
+                labelClone.querySelector('#lbl-pt').innerText = item.pt;
+                labelClone.querySelector('#lbl-pzs').innerText = item.pzs;
+                
+                // Re-generar código de barras en el clon (JsBarcode necesita el elemento SVG real)
+                const svg = labelClone.querySelector('svg');
+                svg.id = "barcode-print-" + index;
+                
+                printArea.appendChild(labelClone);
+                
+                JsBarcode("#barcode-print-" + index, item.idCode, {
+                    format: "CODE128", height: 50, width: 2, displayValue: false, margin: 5
+                });
+            });
+
+            window.print();
         }
     </script>
 </body>
