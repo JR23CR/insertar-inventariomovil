@@ -54,6 +54,7 @@
         .btn-print { background-color: #2c3e50; color: white; margin-top: 20px; }
         .btn-add { background-color: #27ae60; color: white; margin-top: 10px; }
         .btn-back { background-color: #7f8c8d; color: white; text-decoration: none; display: block; text-align: center; margin-top: 20px; padding: 12px; border-radius: 8px; }
+        .btn-bt { background-color: #7f8c8d; color: white; margin-bottom: 15px; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
         #status { font-size: 0.9rem; color: #666; margin-bottom: 10px; text-align: center; }
 
@@ -133,6 +134,7 @@
 <body>
     <div class="container">
         <h2 class="no-print">🏷️ Imprimir Etiquetas (Aserrada)</h2>
+        <button class="btn-bt no-print" onclick="conectarBluetooth()">📡 CONECTAR IMPRESORA BLUETOOTH (Bluefy)</button>
         
         <div class="card no-print">
             <div id="status">Conectando...</div>
@@ -145,7 +147,8 @@
         <div id="queue-container" class="card no-print" style="display:none;">
             <h3 style="margin-top:0;">Cola de Impresión (<span id="queue-count">0</span>)</h3>
             <div id="queue-list" style="max-height: 150px; overflow-y: auto; text-align: left; margin-bottom: 10px;"></div>
-            <button class="btn-print" onclick="imprimirCola()">🖨️ IMPRIMIR TODOS</button>
+            <button class="btn-print" onclick="imprimirCola()">🖨️ IMPRIMIR (PDF/PC)</button>
+            <button class="btn-print" style="background-color: #e67e22;" onclick="imprimirColaBluetooth()">📡 IMPRIMIR BLUETOOTH</button>
         </div>
 
         <div id="label-preview-container" style="display:none;">
@@ -187,6 +190,8 @@
         let inventario = [];
         let printQueue = [];
         let currentBultoData = null;
+        let bluetoothDevice;
+        let printCharacteristic;
 
         window.onload = function() {
             cargarInventario();
@@ -347,6 +352,84 @@
             });
 
             window.print();
+        }
+
+        // --- Lógica Bluetooth (Web Bluetooth API) ---
+        async function conectarBluetooth() {
+            try {
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+                });
+                
+                const server = await bluetoothDevice.gatt.connect();
+                const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+                printCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+                
+                alert("¡Conectado a " + bluetoothDevice.name + "!");
+            } catch (error) {
+                console.error(error);
+                alert("Error al conectar: " + error + "\n\nAsegúrate de usar Bluefy y tener el Bluetooth encendido.");
+            }
+        }
+
+        async function imprimirColaBluetooth() {
+            if (!printCharacteristic) {
+                alert("Primero debes conectar la impresora (Botón Gris arriba)");
+                return;
+            }
+            
+            if (printQueue.length === 0) {
+                alert("La cola está vacía.");
+                return;
+            }
+
+            const encoder = new TextEncoder();
+            const CHUNK_SIZE = 50;
+
+            for (const item of printQueue) {
+                let cmd = "";
+                // Configuración 4x3 pulgadas
+                cmd += "SIZE 4,3\r\n"; 
+                cmd += "GAP 2 mm,0\r\n";
+                cmd += "DIRECTION 1\r\n";
+                cmd += "CLS\r\n";
+                cmd += "DENSITY 12\r\n";
+
+                // Contenido
+                cmd += `TEXT 250,20,"3",0,1,1,"MADERA ASERRADA"\r\n`;
+                
+                // Código de barras
+                cmd += `BARCODE 150,60,"128",60,0,0,3,3,"${item.idCode}"\r\n`;
+                cmd += `TEXT 280,130,"3",0,1,1,"${item.idCode}"\r\n`;
+
+                cmd += `BAR 30,160, 750, 3\r\n`;
+
+                cmd += `TEXT 50,180,"3",0,1,1,"Especie: ${item.especie}"\r\n`;
+                cmd += `TEXT 50,210,"3",0,1,1,"Calidad: ${item.calidad}"\r\n`;
+                cmd += `TEXT 50,240,"3",0,1,1,"${item.dims}"\r\n`;
+
+                cmd += `BAR 30,270, 750, 3\r\n`;
+
+                // Totals
+                cmd += `TEXT 100,290,"3",0,1,1,"Pies Tablares"\r\n`;
+                cmd += `TEXT 100,320,"3",0,2,2,"${item.pt}"\r\n`;
+
+                cmd += `TEXT 500,290,"3",0,1,1,"Piezas"\r\n`;
+                cmd += `TEXT 500,320,"3",0,2,2,"${item.pzs}"\r\n`;
+
+                cmd += `TEXT 50,550,"2",0,1,1,"Fecha: ${item.fecha}"\r\n`;
+
+                cmd += "PRINT 1\r\n";
+
+                const encodedData = encoder.encode(cmd);
+                for (let i = 0; i < encodedData.length; i += CHUNK_SIZE) {
+                    await printCharacteristic.writeValue(encodedData.slice(i, i + CHUNK_SIZE));
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                }
+                await new Promise(resolve => setTimeout(resolve, 500)); // Pausa entre etiquetas
+            }
+            alert("Impresión Bluetooth finalizada.");
         }
     </script>
 </body>
