@@ -197,6 +197,7 @@
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJm67IZXi_zHsxQv3mqosqb6-RyKp4-j-h-kqdP153HTN8t6lt7BPE5BrwSzphArkx/exec";
+    let inventarioRemoto = [];
 
     // Datos de configuración
     const especiesList = [
@@ -234,6 +235,7 @@
     window.onload = function() {
         // Poner fecha actual por defecto
         document.getElementById('fecha').valueAsDate = new Date();
+        cargarInventario();
         
         // Cargar Especies
         const selEspecie = document.getElementById('especie');
@@ -253,6 +255,15 @@
             selCalidad.appendChild(opt);
         });
     };
+
+    function cargarInventario() {
+        fetch(GOOGLE_SCRIPT_URL + "?sheet=MADERA ASERRADA")
+        .then(res => res.json())
+        .then(data => {
+            inventarioRemoto = data;
+        })
+        .catch(e => console.error("Error cargando inventario para validación:", e));
+    }
 
     function generarTabla() {
         const largoMin = parseInt(document.getElementById('largoMin').value);
@@ -418,7 +429,10 @@
         // Valores calculados/automáticos
         const ca = obtenerAbreviaturaCA(calidad);
         const tipoProd = "Madera Aserrada";
-        const idCode = `${poa}-${fardo}`; // Generación de ID único
+        
+        const espObj = especiesList.find(e => e.nombre === especie);
+        const espCode = espObj ? espObj.codigo : "GEN";
+        const idCode = `MD-${poa}-${fardo}-${espCode}`; // ID Code: MD-POA-BULTO-ESPECIE
         const fechaSecado = ""; // Se deja vacío para el Sheet
 
         // Filas de la tabla
@@ -482,6 +496,11 @@
             return;
         }
 
+        if (inventarioRemoto.some(item => String(item.FARDO) === String(bulto))) {
+            alert("⛔ El número de bulto " + bulto + " YA EXISTE en el inventario. Verifica el consecutivo.");
+            return;
+        }
+
         const table = document.getElementById('tallyTable');
         if (!table.tHead || table.tHead.rows.length === 0) {
             alert("Primero genera la tabla e ingresa datos.");
@@ -489,6 +508,11 @@
         }
 
         // Recopilar Encabezado
+        const poa = document.getElementById('poa').value;
+        const especieNombre = document.getElementById('especie').value;
+        const espObj = especiesList.find(e => e.nombre === especieNombre);
+        const espCode = espObj ? espObj.codigo : "GEN";
+
         const encabezado = {
             fecha: document.getElementById('fecha').value,
             poa: document.getElementById('poa').value,
@@ -502,7 +526,7 @@
             ubicacion: document.getElementById('ubicacion').value,
             ca: obtenerAbreviaturaCA(document.getElementById('calidad').value),
             tipoProducto: "Madera Aserrada",
-            idCode: `${document.getElementById('poa').value}-${bulto}`,
+            idCode: `MD-${poa}-${bulto}-${espCode}`, // ID Code robusto para código de barras
             fechaSecado: ""
         };
 
@@ -534,7 +558,20 @@
         const payload = { tipo: "tally_aserrada", sheetName: "MADERA ASERRADA", ...encabezado, detalles };
 
         fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
-            .then(res => alert("✅ Tally guardado correctamente en Google Sheets."))
+            .then(res => {
+                alert("✅ Tally guardado correctamente.");
+                
+                // 1. Agregar a inventario local para evitar duplicado inmediato
+                inventarioRemoto.push({ FARDO: bulto });
+
+                // 2. Limpiar detalles (inputs de la tabla)
+                const inputs = document.querySelectorAll('#tallyTable input[type="number"]');
+                inputs.forEach(input => input.value = "");
+                calcularTotales(); // Resetear totales a 0
+
+                // 3. Incrementar correlativo de bulto
+                document.getElementById('bultoNo').value = parseInt(bulto) + 1;
+            })
             .catch(err => alert("❌ Error al guardar: " + err));
     }
 </script>
