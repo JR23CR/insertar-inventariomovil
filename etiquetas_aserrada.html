@@ -170,12 +170,12 @@
                 
                 <div class="lbl-grid">
                     <div class="lbl-col">
-                        <span class="lbl-val" id="lbl-pt">0.00</span>
-                        <span class="lbl-tit">Pies Tablares</span>
-                    </div>
-                    <div class="lbl-col">
                         <span class="lbl-val" id="lbl-pzs">0</span>
                         <span class="lbl-tit">Piezas</span>
+                    </div>
+                    <div class="lbl-col">
+                        <span class="lbl-val" id="lbl-pt">0</span>
+                        <span class="lbl-tit">Pies Tablares</span>
                     </div>
                 </div>
             </div>
@@ -248,7 +248,7 @@
                 especie: head['ESPECIE'],
                 calidad: head['CALIDAD'],
                 dims: `Grosor: ${head['GROSOR']} - ${head['CONDICION']}`,
-                pt: totalPT.toFixed(2),
+                pt: Math.round(totalPT),
                 pzs: totalPiezas,
                 fecha: head['Fecha de ingreso'],
                 ubicacion: head['UBICACION']
@@ -394,36 +394,38 @@
                 let cmd = "";
                 // Configuración 4x3 pulgadas
                 cmd += "SIZE 4,3\r\n"; 
-                cmd += "GAP 2 mm,0\r\n";
+                cmd += "GAP 0.12,0\r\n";
                 cmd += "DIRECTION 1\r\n";
                 cmd += "CLS\r\n";
                 cmd += "DENSITY 12\r\n";
 
-                // Contenido
-                // Encabezado: Texto pequeño izq, Bulto grande der
-                cmd += `TEXT 20,20,"2",0,1,1,"MADERA ASERRADA"\r\n`;
-                cmd += `TEXT 450,10,"3",0,3,3,"#${item.fardo}"\r\n`;
+                // --- ENCABEZADO ---
+                cmd += `TEXT 40,30,"3",0,1,1,"MADERA ASERRADA"\r\n`;
+                cmd += `TEXT 620,20,"4",0,1,1,"#${item.fardo}"\r\n`;
                 
-                // Código de barras
-                cmd += `BARCODE 100,80,"128",70,0,0,3,3,"${item.idCode}"\r\n`;
-                cmd += `TEXT 250,160,"2",0,1,1,"${item.idCode}"\r\n`;
+                // --- CÓDIGO DE BARRAS CENTRADO ---
+                // Usamos 2,4 para asegurar que quepa si el código es largo (el ejemplo usaba 3,6)
+                cmd += `BARCODE 120,90,"128",90,1,0,2,4,"${item.idCode}"\r\n`;
 
-                cmd += `BAR 20,190, 760, 3\r\n`;
+                // --- SEPARADOR ---
+                cmd += `BAR 40,230,730,4\r\n`;
 
-                cmd += `TEXT 20,210,"3",0,1,1,"Especie: ${item.especie}"\r\n`;
-                cmd += `TEXT 20,250,"3",0,1,1,"Calidad: ${item.calidad}"\r\n`;
-                cmd += `TEXT 20,290,"3",0,1,1,"${item.dims}"\r\n`;
+                // --- DETALLES DE ESPECIE ---
+                cmd += `TEXT 40,260,"3",0,1,1,"Especie: ${item.especie}"\r\n`;
+                cmd += `TEXT 40,310,"3",0,1,1,"Calidad: ${item.calidad}"\r\n`;
+                cmd += `TEXT 40,360,"3",0,1,1,"${item.dims}"\r\n`;
 
-                cmd += `BAR 20,340, 760, 3\r\n`;
+                // --- SEPARADOR INFERIOR ---
+                cmd += `BAR 40,420,730,4\r\n`;
 
-                // Totals
-                cmd += `TEXT 50,360,"3",0,1,1,"Pies Tablares"\r\n`;
-                cmd += `TEXT 50,400,"3",0,2,2,"${item.pt}"\r\n`;
+                // --- TOTALES EN GRANDE (Jerarquía Visual) ---
+                cmd += `TEXT 40,450,"2",0,1,1,"PIES TABLARES"\r\n`;
+                cmd += `TEXT 40,500,"5",0,1,1,"${item.pt}"\r\n`;
 
-                cmd += `TEXT 450,360,"3",0,1,1,"Piezas"\r\n`;
-                cmd += `TEXT 450,400,"3",0,2,2,"${item.pzs}"\r\n`;
+                cmd += `TEXT 550,450,"2",0,1,1,"PIEZAS"\r\n`;
+                cmd += `TEXT 550,500,"5",0,1,1,"${item.pzs}"\r\n`;
 
-                cmd += "PRINT 1\r\n";
+                cmd += "PRINT 1,1\r\n";
 
                 const encodedData = encoder.encode(cmd);
                 for (let i = 0; i < encodedData.length; i += CHUNK_SIZE) {
