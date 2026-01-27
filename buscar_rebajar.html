@@ -128,6 +128,9 @@
             // Tomamos la primera fila para los datos de encabezado
             const head = filas[0];
             
+            // Aseguramos que el bulto sea un string seguro para el HTML
+            const bultoSafe = String(head['FARDO']).replace(/'/g, "\\'");
+
             // Calcular totales
             let totalPiezas = 0;
             let totalPT = 0;
@@ -189,13 +192,21 @@
                         </tfoot>
                     </table>
 
-                    <button class="btn-delete" onclick="darDeBaja('${head['FARDO']}')">🗑️ DAR DE BAJA (Mover a Salidas)</button>
+                    <button class="btn-delete" onclick="darDeBaja('${bultoSafe}')">🗑️ DAR DE BAJA (Mover a Salidas)</button>
                 </div>
             `;
         }
 
         function darDeBaja(bulto) {
-            if(!confirm("¿Estás seguro de dar de baja el Bulto #" + bulto + "?\n\nSe moverá a la hoja 'SALIDA MDA' y se borrará del inventario actual.")) return;
+            console.log("Intentando dar de baja bulto:", bulto);
+            
+            const motivo = prompt("¿Estás seguro de dar de baja el Bulto #" + bulto + "?\n\nIngresa el MOTIVO (Venta, Merma, Error):", "Venta");
+            
+            if (motivo === null) return; // Usuario canceló
+            if (motivo.trim() === "") {
+                alert("❌ Debes ingresar un motivo para continuar.");
+                return;
+            }
 
             const status = document.getElementById('status');
             status.innerText = "⏳ Procesando baja...";
@@ -205,11 +216,23 @@
                 tipo: "baja_aserrada",
                 bulto: bulto,
                 sheetName: "MADERA ASERRADA",
-                targetSheet: "SALIDA MDA"
+                targetSheet: "SALIDA MDA",
+                motivo: motivo
             };
 
-            fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
-            .then(res => res.json())
+            fetch(GOOGLE_SCRIPT_URL, { 
+                method: "POST", 
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.text()) // Obtenemos el texto primero para ver si es un error HTML
+            .then(text => {
+                console.log("Respuesta del servidor:", text);
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error("El servidor no devolvió JSON válido (posible error de script): " + text.substring(0, 150));
+                }
+            })
             .then(data => {
                 if(data.result === "success") {
                     alert("✅ Bulto #" + bulto + " dado de baja correctamente.");
@@ -217,14 +240,14 @@
                     document.getElementById('searchBulto').value = "";
                     cargarInventario(); // Recargar la lista para que desaparezca
                 } else {
-                    alert("❌ Error al dar de baja: " + (data.error || data.message));
+                    alert("❌ Error al dar de baja: " + (data.error || data.message || "Error desconocido"));
                     status.innerText = "❌ Error en la operación.";
                 }
             })
             .catch(err => {
                 console.error(err);
-                alert("❌ Error de conexión.");
-                status.innerText = "❌ Error de conexión.";
+                alert("❌ Error: " + err.message);
+                status.innerText = "❌ Error: " + err.message;
             });
         }
     </script>
