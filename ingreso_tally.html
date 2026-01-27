@@ -127,19 +127,19 @@
         <div class="grid-3">
             <div>
                 <label>Especie</label>
-                <input type="text" id="especie" value="Teca">
+                <select id="especie"></select>
             </div>
             <div>
                 <label>Calidad</label>
-                <input type="text" id="calidad" value="A">
+                <select id="calidad"></select>
             </div>
             <div>
                 <label>Espesor</label>
                 <select id="espesor">
-                    <option value="1">4/4"</option>
-                    <option value="1.25">5/4"</option>
-                    <option value="1.5">6/4"</option>
-                    <option value="2">8/4"</option>
+                    <option value="1">4/4</option>
+                    <option value="1.25">5/4</option>
+                    <option value="1.5">6/4</option>
+                    <option value="2">8/4</option>
                 </select>
             </div>
         </div>
@@ -147,32 +147,13 @@
             <div>
                 <label>Condición</label>
                 <select id="condicion">
-                    <option value="Verde">Verde</option>
-                    <option value="Seco Aire">Seco Aire (AD)</option>
-                    <option value="Seco Horno">Seco Horno (KD)</option>
+                    <option value="A-D" selected>A-D</option>
+                    <option value="K-D">K-D</option>
                 </select>
             </div>
             <div>
                 <label>Ubicación</label>
                 <input type="text" id="ubicacion" placeholder="Ej: Patio 1">
-            </div>
-            <div>
-                <label>Tipo de Producto</label>
-                <input type="text" id="tipoProducto" value="Madera Aserrada">
-            </div>
-        </div>
-        <div class="grid-3">
-            <div>
-                <label>CA</label>
-                <input type="text" id="ca" placeholder="Control Abastecimiento">
-            </div>
-            <div>
-                <label>ID Code</label>
-                <input type="text" id="idCode" placeholder="ID Opcional">
-            </div>
-            <div>
-                <label>Fecha Secado</label>
-                <input type="date" id="fechaSecado">
             </div>
         </div>
         <hr>
@@ -217,9 +198,60 @@
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJm67IZXi_zHsxQv3mqosqb6-RyKp4-j-h-kqdP153HTN8t6lt7BPE5BrwSzphArkx/exec";
 
+    // Datos de configuración
+    const especiesList = [
+        { nombre: "Maletio colorado", cientifico: "Aspidosperma megalocarpom", codigo: "ASPIME" },
+        { nombre: "Maletio blanco", cientifico: "Aspidosperma stegomersis", codigo: "ASPISP" },
+        { nombre: "Jobillo", cientifico: "Astronium graveolens", codigo: "ASTRGR" },
+        { nombre: "Ramon oreja", cientifico: "Brosimum costaricanum", codigo: "BROSCO" },
+        { nombre: "Pucte", cientifico: "Bucida buceras", codigo: "BUCIBU" },
+        { nombre: "Chaltecoco", cientifico: "Caesalpinia velutina", codigo: "CAESVE" },
+        { nombre: "Santa maria", cientifico: "Calophyllum brasiliense", codigo: "CALOBR" },
+        { nombre: "Cedro", cientifico: "Cedrela odorata", codigo: "CEDROD" },
+        { nombre: "Pochote", cientifico: "Bombacopsis spp.", codigo: "CEIBAE" },
+        { nombre: "Cericote", cientifico: "Cordia dodecandra", codigo: "CORDDO" },
+        { nombre: "Manchiche", cientifico: "Lonchocarpus castillo", codigo: "LONCCA" },
+        { nombre: "Tzalam", cientifico: "Lysiloma bahamensis", codigo: "LYSIBA" },
+        { nombre: "Chechen negro", cientifico: "Metopium brownei", codigo: "METOBR" },
+        { nombre: "Jabin", cientifico: "Piscidia piscipula", codigo: "PISCPI" },
+        { nombre: "Cola de coche", cientifico: "Pithecellobium arboreum", codigo: "PITHAR" },
+        { nombre: "Hormigo/granadillo", cientifico: "Platymiscium dimorphandrum", codigo: "PLATDI" },
+        { nombre: "Silión", cientifico: "Pouteria amygdalina", codigo: "POUTAMY" },
+        { nombre: "Amapola", cientifico: "Pseudobombax ellipticum", codigo: "PSEUEL" },
+        { nombre: "Pasaque", cientifico: "Simaruba glauca", codigo: "SIMAGL" },
+        { nombre: "Catalox", cientifico: "Swartzia lundellii", codigo: "SWARLU" },
+        { nombre: "Chichipate", cientifico: "Sweetia panamensis", codigo: "SWEEPA" },
+        { nombre: "Caoba", cientifico: "Swietenia macrophylla", codigo: "SWIEMA" },
+        { nombre: "Danto", cientifico: "Vatairea lundellii", codigo: "VATALU" },
+        { nombre: "Gesmo", cientifico: "Lysiloma spp.", codigo: "LYSIAC" }
+    ];
+
+    const calidadesList = [
+        "SELECTA Y MEJOR", "COMÚN 1", "COMÚN 2", "COMUNES", 
+        "COMUNES G-B", "COMÚN B", "COMUN Y MEJOR", "M-R"
+    ];
+
     window.onload = function() {
         // Poner fecha actual por defecto
         document.getElementById('fecha').valueAsDate = new Date();
+        
+        // Cargar Especies
+        const selEspecie = document.getElementById('especie');
+        especiesList.forEach(esp => {
+            const opt = document.createElement('option');
+            opt.value = esp.nombre;
+            opt.text = esp.nombre;
+            selEspecie.appendChild(opt);
+        });
+
+        // Cargar Calidades
+        const selCalidad = document.getElementById('calidad');
+        calidadesList.forEach(cal => {
+            const opt = document.createElement('option');
+            opt.value = cal;
+            opt.text = cal;
+            selCalidad.appendChild(opt);
+        });
     };
 
     function generarTabla() {
@@ -342,6 +374,20 @@
         document.getElementById('granTotalPT').innerText = granTotalPT.toFixed(2);
     }
 
+    function obtenerAbreviaturaCA(calidad) {
+        const mapa = {
+            "SELECTA Y MEJOR": "SEL&M",
+            "COMÚN 1": "C1",
+            "COMÚN 2": "C2",
+            "COMUNES": "COM",
+            "COMUNES G-B": "CGB",
+            "COMÚN B": "CB",
+            "COMUN Y MEJOR": "C&M",
+            "M-R": "MR"
+        };
+        return mapa[calidad] || calidad.substring(0, 3).toUpperCase();
+    }
+
     function exportarCSV() {
         const table = document.getElementById('tallyTable');
         if (!table.tHead.rows.length) {
@@ -361,17 +407,19 @@
 
         // Valores del formulario (Encabezado)
         const fardo = document.getElementById('bultoNo').value;
-        const grosor = document.getElementById('espesor').options[document.getElementById('espesor').selectedIndex].text;
         const poa = document.getElementById('poa').value;
+        const grosor = document.getElementById('espesor').options[document.getElementById('espesor').selectedIndex].text;
         const condicion = document.getElementById('condicion').value;
         const fecha = document.getElementById('fecha').value;
         const ubicacion = document.getElementById('ubicacion').value;
-        const ca = document.getElementById('ca').value;
         const calidad = document.getElementById('calidad').value;
         const especie = document.getElementById('especie').value;
-        const tipoProd = document.getElementById('tipoProducto').value;
-        const idCode = document.getElementById('idCode').value;
-        const fechaSecado = document.getElementById('fechaSecado').value;
+        
+        // Valores calculados/automáticos
+        const ca = obtenerAbreviaturaCA(calidad);
+        const tipoProd = "Madera Aserrada";
+        const idCode = `${poa}-${fardo}`; // Generación de ID único
+        const fechaSecado = ""; // Se deja vacío para el Sheet
 
         // Filas de la tabla
         let rowCounter = 1;
@@ -452,10 +500,10 @@
             // Nuevos campos para coincidir con Sheet
             condicion: document.getElementById('condicion').value,
             ubicacion: document.getElementById('ubicacion').value,
-            ca: document.getElementById('ca').value,
-            tipoProducto: document.getElementById('tipoProducto').value,
-            idCode: document.getElementById('idCode').value,
-            fechaSecado: document.getElementById('fechaSecado').value
+            ca: obtenerAbreviaturaCA(document.getElementById('calidad').value),
+            tipoProducto: "Madera Aserrada",
+            idCode: `${document.getElementById('poa').value}-${bulto}`,
+            fechaSecado: ""
         };
 
         // Recopilar Detalles (Solo celdas con valores > 0)

@@ -71,6 +71,12 @@
         <div class="card">
             <div id="status">Conectando...</div>
             <label style="font-weight:bold;">Número de Bulto / Fardo</label>
+            
+            <!-- Filtro de Especie -->
+            <select id="filtroEspecie" onchange="filtrarPorEspecie()" style="margin-bottom: 10px; padding: 10px; width: 100%;">
+                <option value="">Todas las Especies</option>
+            </select>
+
             <input type="text" id="searchBulto" placeholder="Ej: 501">
             <button class="btn-search" onclick="buscarBulto()">BUSCAR</button>
         </div>
@@ -102,6 +108,18 @@
                 inventario = data;
                 status.innerText = `✅ Datos cargados: ${data.length} registros.`;
                 status.style.color = "#27ae60";
+                
+                // Llenar filtro de especies
+                const especies = [...new Set(data.map(item => item['ESPECIE']))];
+                const select = document.getElementById('filtroEspecie');
+                especies.forEach(esp => {
+                    if(esp) {
+                        const opt = document.createElement('option');
+                        opt.value = esp;
+                        opt.innerText = esp;
+                        select.appendChild(opt);
+                    }
+                });
             })
             .catch(err => {
                 console.error(err);
@@ -110,18 +128,24 @@
             });
         }
 
+        function filtrarPorEspecie() {
+            // Opcional: Podrías hacer que al seleccionar especie, el input de búsqueda sugiera bultos
+            document.getElementById('searchBulto').focus();
+        }
+
         function buscarBulto() {
             const bulto = document.getElementById('searchBulto').value.trim();
+            const especieFiltro = document.getElementById('filtroEspecie').value;
             if (!bulto) return;
 
             const resultadoDiv = document.getElementById('resultado');
             resultadoDiv.innerHTML = "";
 
-            // Filtrar todas las filas que coincidan con el fardo
-            const filas = inventario.filter(row => String(row['FARDO']) === String(bulto));
+            // Filtrar por Fardo Y Especie (si está seleccionada)
+            const filas = inventario.filter(row => String(row['FARDO']) === String(bulto) && (!especieFiltro || row['ESPECIE'] === especieFiltro));
 
             if (filas.length === 0) {
-                resultadoDiv.innerHTML = `<div class="card" style="color:red; text-align:center;">❌ Bulto #${bulto} no encontrado.</div>`;
+                resultadoDiv.innerHTML = `<div class="card" style="color:red; text-align:center;">❌ Bulto #${bulto} no encontrado ${especieFiltro ? 'en ' + especieFiltro : ''}.</div>`;
                 return;
             }
 

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Menú - Madera Aserrada</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -53,10 +54,43 @@
 </head>
 <body>
     <h1>Inventario Madera Aserrada</h1>
+    
+    <div style="width: 90%; max-width: 400px; background: white; padding: 10px; border-radius: 12px; margin-bottom: 20px;">
+        <canvas id="myChart"></canvas>
+    </div>
+
     <a href="ingreso_tally.html" class="menu-button btn-tally">📝 Ingreso Tallys</a>
     <a href="buscar_rebajar.html" class="menu-button btn-buscar">🔍 Buscar y Rebajar</a>
     <a href="packing_aserrada.html" class="menu-button btn-packing">📦 Packing List</a>
     
     <a href="index.html" class="menu-button btn-back">⬅ Volver al Inicio</a>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJm67IZXi_zHsxQv3mqosqb6-RyKp4-j-h-kqdP153HTN8t6lt7BPE5BrwSzphArkx/exec";
+
+        fetch(GOOGLE_SCRIPT_URL + "?sheet=MADERA ASERRADA")
+        .then(res => res.json())
+        .then(data => {
+            // Agrupar por Especie
+            const especies = {};
+            data.forEach(row => {
+                const esp = row['ESPECIE'] || 'Desconocido';
+                especies[esp] = (especies[esp] || 0) + (parseFloat(row['PIES TABLARES']) || 0);
+            });
+
+            const ctx = document.getElementById('myChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(especies),
+                    datasets: [{
+                        data: Object.values(especies),
+                        backgroundColor: ['#8e44ad', '#2980b9', '#27ae60', '#f1c40f', '#e74c3c']
+                    }]
+                },
+                options: { plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Pies Tablares por Especie' } } }
+            });
+        });
+    </script>
 </body>
 </html>
