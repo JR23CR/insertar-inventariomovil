@@ -114,13 +114,16 @@
         }
 
         /* Contenido de la etiqueta */
-        .lbl-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
+        .lbl-header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 2px solid black; padding-bottom: 5px; margin-bottom: 5px; }
+        .lbl-title { font-size: 1rem; font-weight: bold; text-align: left; }
+        .lbl-bulto-big { font-size: 3rem; font-weight: 900; line-height: 1; }
+        
         .lbl-sub { font-size: 0.9rem; margin-bottom: 5px; }
-        .lbl-detail { font-size: 1rem; font-weight: bold; margin: 2px 0; }
+        .lbl-detail { font-size: 1.4rem; font-weight: bold; margin: 4px 0; }
         .lbl-grid { display: flex; justify-content: space-around; width: 100%; margin-top: 5px; border-top: 2px solid black; padding-top: 5px; }
         .lbl-col { display: flex; flex-direction: column; }
-        .lbl-val { font-size: 1.4rem; font-weight: bold; }
-        .lbl-tit { font-size: 0.8rem; text-transform: uppercase; }
+        .lbl-val { font-size: 2rem; font-weight: bold; }
+        .lbl-tit { font-size: 1rem; text-transform: uppercase; }
         
         /* Cola de impresión */
         .queue-item {
@@ -153,11 +156,13 @@
 
         <div id="label-preview-container" style="display:none;">
             <div class="label-box" id="etiqueta">
-                <div class="lbl-header">MADERA ASERRADA</div>
+                <div class="lbl-header-row">
+                    <div class="lbl-title">MADERA ASERRADA</div>
+                    <div class="lbl-bulto-big" id="lbl-bulto-header">#000</div>
+                </div>
+                
                 <svg id="barcode"></svg>
                 <div class="lbl-sub" id="lbl-idcode">CODE</div>
-                
-                <div style="width:100%; border-bottom: 2px solid black; margin: 5px 0;"></div>
                 
                 <div class="lbl-detail" id="lbl-especie">ESPECIE</div>
                 <div class="lbl-detail" id="lbl-calidad">CALIDAD</div>
@@ -173,7 +178,6 @@
                         <span class="lbl-tit">Piezas</span>
                     </div>
                 </div>
-                <div style="margin-top:auto; font-size:0.8rem;" id="lbl-fecha">Fecha</div>
             </div>
         </div>
 
@@ -243,10 +247,11 @@
                 fardo: head['FARDO'],
                 especie: head['ESPECIE'],
                 calidad: head['CALIDAD'],
-                dims: `${head['GROSOR']} - ${head['CONDICION']} - ${head['UBICACION']}`,
+                dims: `Grosor: ${head['GROSOR']} - ${head['CONDICION']}`,
                 pt: totalPT.toFixed(2),
                 pzs: totalPiezas,
-                fecha: head['Fecha de ingreso']
+                fecha: head['Fecha de ingreso'],
+                ubicacion: head['UBICACION']
             };
 
             // Llenar datos
@@ -256,10 +261,7 @@
             document.getElementById('lbl-dims').innerText = currentBultoData.dims;
             document.getElementById('lbl-pt').innerText = currentBultoData.pt;
             document.getElementById('lbl-pzs').innerText = currentBultoData.pzs;
-            
-            let fecha = head['Fecha de ingreso'];
-            if(fecha && fecha.includes('T')) fecha = new Date(fecha).toLocaleDateString();
-            document.getElementById('lbl-fecha').innerText = `Bulto: ${head['FARDO']} | Fecha: ${fecha}`;
+            document.getElementById('lbl-bulto-header').innerText = `#${currentBultoData.fardo}`;
 
             // Generar Código de Barras
             JsBarcode("#barcode", head['ID CODE'] || `${head['POA']}-${head['FARDO']}`, {
@@ -333,6 +335,7 @@
                 labelClone.id = "print-lbl-" + index;
                 
                 // Actualizar datos en el clon
+                labelClone.querySelector('#lbl-bulto-header').innerText = "#" + item.fardo;
                 labelClone.querySelector('#lbl-idcode').innerText = item.idCode;
                 labelClone.querySelector('#lbl-especie').innerText = item.especie;
                 labelClone.querySelector('#lbl-calidad').innerText = item.calidad;
@@ -397,28 +400,28 @@
                 cmd += "DENSITY 12\r\n";
 
                 // Contenido
-                cmd += `TEXT 250,20,"3",0,1,1,"MADERA ASERRADA"\r\n`;
+                // Encabezado: Texto pequeño izq, Bulto grande der
+                cmd += `TEXT 20,20,"2",0,1,1,"MADERA ASERRADA"\r\n`;
+                cmd += `TEXT 450,10,"3",0,3,3,"#${item.fardo}"\r\n`;
                 
                 // Código de barras
-                cmd += `BARCODE 150,60,"128",60,0,0,3,3,"${item.idCode}"\r\n`;
-                cmd += `TEXT 280,130,"3",0,1,1,"${item.idCode}"\r\n`;
+                cmd += `BARCODE 100,80,"128",70,0,0,3,3,"${item.idCode}"\r\n`;
+                cmd += `TEXT 250,160,"2",0,1,1,"${item.idCode}"\r\n`;
 
-                cmd += `BAR 30,160, 750, 3\r\n`;
+                cmd += `BAR 20,190, 760, 3\r\n`;
 
-                cmd += `TEXT 50,180,"3",0,1,1,"Especie: ${item.especie}"\r\n`;
-                cmd += `TEXT 50,210,"3",0,1,1,"Calidad: ${item.calidad}"\r\n`;
-                cmd += `TEXT 50,240,"3",0,1,1,"${item.dims}"\r\n`;
+                cmd += `TEXT 20,210,"3",0,1,1,"Especie: ${item.especie}"\r\n`;
+                cmd += `TEXT 20,250,"3",0,1,1,"Calidad: ${item.calidad}"\r\n`;
+                cmd += `TEXT 20,290,"3",0,1,1,"${item.dims}"\r\n`;
 
-                cmd += `BAR 30,270, 750, 3\r\n`;
+                cmd += `BAR 20,340, 760, 3\r\n`;
 
                 // Totals
-                cmd += `TEXT 100,290,"3",0,1,1,"Pies Tablares"\r\n`;
-                cmd += `TEXT 100,320,"3",0,2,2,"${item.pt}"\r\n`;
+                cmd += `TEXT 50,360,"3",0,1,1,"Pies Tablares"\r\n`;
+                cmd += `TEXT 50,400,"3",0,2,2,"${item.pt}"\r\n`;
 
-                cmd += `TEXT 500,290,"3",0,1,1,"Piezas"\r\n`;
-                cmd += `TEXT 500,320,"3",0,2,2,"${item.pzs}"\r\n`;
-
-                cmd += `TEXT 50,550,"2",0,1,1,"Fecha: ${item.fecha}"\r\n`;
+                cmd += `TEXT 450,360,"3",0,1,1,"Piezas"\r\n`;
+                cmd += `TEXT 450,400,"3",0,2,2,"${item.pzs}"\r\n`;
 
                 cmd += "PRINT 1\r\n";
 
