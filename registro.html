@@ -798,18 +798,18 @@
         // --- SECCIÓN SUPERIOR ---
         // El código de barras es solo el número de fardo para producto terminado.
         const barcodeId = f.fardoNo;
-        // Se ajusta la coordenada X y se quita el parámetro de alineación que no funciona en la impresora.
-        // Se intenta centrar manualmente.
-        cmd += `BARCODE 300,20,"128",40,1,0,2,2,"${barcodeId}"\r\n`;
-        cmd += `TEXT 340,75,"3",0,1,1,"Lote: ${f.lote}"\r\n`;
-        cmd += `TEXT 280,105,"3",0,1,1,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`;
+        // Código de barras a la izquierda y más grande
+        cmd += `BARCODE 40,20,"128",60,1,0,3,3,"${barcodeId}"\r\n`;
+        // Textos del encabezado alineados a la derecha para balancear
+        cmd += `TEXT 780,75,"3",0,1,1,3,"Lote: ${f.lote}"\r\n`;
+        cmd += `TEXT 780,105,"3",0,1,1,3,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`;
 
         // Primera línea divisoria
         cmd += `BAR 40,135,720,2\r\n`;
 
         // --- SECCIÓN CENTRAL ---
-        cmd += `TEXT 320,155,"3",0,1,1,"${f.producto}"\r\n`;
-        cmd += `TEXT 250,190,"3",0,1,1,"${f.grosor} x ${f.ancho} pulg  -  ${f.especie}"\r\n`;
+        cmd += `TEXT 400,155,"3",0,1,1,2,"${f.producto}"\r\n`;
+        cmd += `TEXT 400,190,"3",0,1,1,2,"${f.grosor} x ${f.ancho} pulg  -  ${f.especie}"\r\n`;
 
         // Segunda línea divisoria
         cmd += `BAR 40,220,720,2\r\n`;
@@ -836,8 +836,8 @@
         cmd += `BAR 40,510,720,2\r\n`;
         const fardoTotalPiezas = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
         cmd += `TEXT 60,540,"3",0,1,1,"TOTAL PIEZAS: ${fardoTotalPiezas}"\r\n`;
-        // Se mueve el total a la derecha y se alinea a la derecha para que quepa.
-        cmd += `TEXT 780,540,"3",0,1,1,3,"TOTAL: ${f.m2} M2"\r\n`;
+        // Total M2 movido a la izquierda y alineado a la derecha para mejor visibilidad.
+        cmd += `TEXT 740,540,"3",0,1,1,3,"TOTAL: ${f.m2} M2"\r\n`;
 
         cmd += "PRINT 1,1\r\n";
 
