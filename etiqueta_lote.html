@@ -54,6 +54,7 @@
         button:active { opacity: 0.8; }
         .btn-search { background-color: var(--primary); color: white; }
         .btn-print { background-color: var(--text-dark); color: white; margin-top: 10px; }
+        .btn-bt { background-color: #e0e6ed; color: var(--text-dark); margin-bottom: 15px; }
         .btn-back { background-color: #e0e6ed; color: var(--text-dark); margin-top: 20px; display: block; text-align: center; text-decoration: none; }
 
         /* Estilos de la Etiqueta (4x3 pulgadas) */
@@ -118,6 +119,7 @@
 
 <div class="container">
     <h2>🏷️ Etiqueta de Lote</h2>
+    <button class="btn-bt" onclick="conectarBluetooth()">📡 Conectar Impresora BT</button>
     
     <div class="card">
         <div id="status" style="text-align:center; color:#666; font-size:0.9rem; margin-bottom:10px;">Cargando base de datos...</div>
@@ -292,21 +294,9 @@
 
         // 1. Conexión Bluetooth si no existe
         if (!printCharacteristic) {
-            try {
-                bluetoothDevice = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'MTH-L1081-13E2' }],
-                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-                });
-                
-                const server = await bluetoothDevice.gatt.connect();
-                const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-                printCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
-            } catch (error) {
-                console.error(error);
-                // Si falla Bluetooth, fallback a impresión normal del navegador
-                if(confirm("No se pudo conectar a la impresora Bluetooth. ¿Imprimir en PDF/Papel normal?")) {
-                    window.print();
-                }
+            await conectarBluetooth();
+            if (!printCharacteristic) {
+                if(confirm("No se pudo conectar Bluetooth. ¿Imprimir PDF?")) window.print();
                 return;
             }
         }
@@ -356,6 +346,22 @@
         } catch (e) {
             alert("Error enviando datos: " + e);
             printCharacteristic = null; // Resetear para reconectar la próxima vez
+        }
+    }
+
+    async function conectarBluetooth() {
+        try {
+            bluetoothDevice = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+            });
+            
+            const server = await bluetoothDevice.gatt.connect();
+            const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+            printCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+            alert("✅ Conectado a " + bluetoothDevice.name);
+        } catch (error) {
+            console.log("Cancelado o Error: " + error);
         }
     }
 </script>
