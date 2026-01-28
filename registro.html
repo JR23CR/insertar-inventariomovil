@@ -802,7 +802,7 @@
         // BARCODE [X,Y,"TYPE",H,READABLE,ROT,NARROW,WIDE,ALIGNMENT,"CONTENT"]
         cmd += `BARCODE 60,20,"128",60,1,0,3,3,2,"${barcodeId}"\r\n`; // Centrado y más grande
         // TEXT [X,Y,"FONT",ROT,X-MULT,Y-MULT,ALIGNMENT,"TEXT"]
-        cmd += `TEXT 300,125,"3",0,1,1,2,"Lote: ${f.lote}"\r\n`; // Centrado
+        cmd += `TEXT 300,125,"3",0,1,1,1,"Lote: ${f.lote}"\r\n`; // Centrado
         // --- SECCION FARDO ---
         cmd += `TEXT 350,45,"3",0,1,1,2,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`; // Centrado
 
