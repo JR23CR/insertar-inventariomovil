@@ -7,37 +7,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
-            --primary: #2c3e50;
-            --accent: #8e44ad; /* Morado de Aserrada */
-            --bg: #f4f7f6;
+            --primary: #1A237E;
+            --bg: #F5F7F9;
+            --card-bg: #FFFFFF;
+            --text-dark: #2c3e50;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             margin: 0;
-            padding: 15px;
-            color: var(--primary);
+            padding: 20px;
+            color: var(--text-dark);
         }
         .container { max-width: 800px; margin: 0 auto; }
-        h2 { text-align: center; font-size: 1.2rem; }
+        h2 { text-align: center; font-size: 1.5rem; color: var(--primary); margin-bottom: 20px; }
         
         .card {
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             margin-bottom: 20px;
         }
 
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
+        label { display: block; margin-top: 10px; font-weight: 700; font-size: 0.8rem; color: #95a5a6; text-transform: uppercase; }
         input, select {
             width: 100%;
             padding: 12px;
             margin-top: 5px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
             box-sizing: border-box;
             font-size: 1rem;
+            background-color: #fafafa;
+            outline: none;
+        }
+        input:focus, select:focus {
+            background-color: #fff;
+            border-color: var(--primary);
         }
 
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
@@ -45,23 +52,23 @@
 
         button {
             width: 100%;
-            padding: 12px;
+            padding: 16px;
             margin-top: 15px;
             border: none;
-            border-radius: 8px;
+            border-radius: 15px;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
         }
-        .btn-main { background-color: var(--accent); color: white; }
-        .btn-secondary { background-color: var(--primary); color: white; }
-        .btn-back { background-color: #7f8c8d; color: white; text-decoration: none; display: block; text-align: center; }
+        .btn-main { background-color: var(--primary); color: white; }
+        .btn-secondary { background-color: var(--text-dark); color: white; }
+        .btn-back { background-color: #e0e6ed; color: var(--text-dark); text-decoration: none; display: block; text-align: center; padding: 15px; border-radius: 15px; font-weight: bold; }
 
         .table-container {
             overflow-x: auto;
             margin-top: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: 1px solid #eee;
+            border-radius: 15px;
         }
         table {
             width: 100%;
@@ -71,13 +78,14 @@
         th, td {
             padding: 8px;
             text-align: center;
-            border: 1px solid #ddd;
+            border: 1px solid #eee;
         }
         thead th {
-            background-color: #f2f2f2;
+            background-color: #f8f9fa;
             position: sticky;
             top: 0;
             z-index: 2;
+            color: #95a5a6;
         }
         tbody th { /* Para la columna de Ancho */
             position: sticky;
@@ -87,7 +95,7 @@
         }
         tfoot td {
             font-weight: bold;
-            background-color: #e8f6f3;
+            background-color: #f0f4f8;
         }
         td input {
             width: 60px;
@@ -99,7 +107,7 @@
         }
         .total-col {
             font-weight: bold;
-            background-color: #eafaf1;
+            background-color: #f0f4f8;
         }
     </style>
 </head>

@@ -6,9 +6,10 @@
     <title>Selección de Inventario</title>
     <style>
         :root {
-            --primary: #2c3e50;
-            --accent: #27ae60;
-            --bg: #f4f7f6;
+            --primary: #1A237E;
+            --bg: #F5F7F9;
+            --card-bg: #FFFFFF;
+            --text-dark: #2c3e50;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -21,6 +22,7 @@
             align-items: center;
             height: 100vh;
             box-sizing: border-box;
+            color: var(--text-dark);
         }
         h1 {
             color: var(--primary);
@@ -33,26 +35,30 @@
             padding: 25px;
             margin: 10px 0;
             border: none;
-            border-radius: 12px;
+            border-radius: 20px;
             font-weight: bold;
             font-size: 1.2rem;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
-            color: white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            color: var(--primary);
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             transition: transform 0.2s;
+            border: 1px solid #e0e0e0;
         }
         .menu-button:active {
             transform: scale(0.98);
         }
-        .btn-aserrada { background-color: #8e44ad; }
-        .btn-terminado { background-color: #2980b9; }
+        .menu-button:hover {
+            box-shadow: 0 6px 20px rgba(26, 35, 126, 0.1);
+            border-color: var(--primary);
+        }
     </style>
 </head>
 <body>
     <h1>Selecciona Inventario</h1>
-    <a href="menu_aserrada.html" class="menu-button btn-aserrada">🪵 Madera Aserrada</a>
-    <a href="menu_terminado.html" class="menu-button btn-terminado">📦 Producto Terminado</a>
+    <a href="menu_aserrada.html" class="menu-button">🪵 Madera Aserrada</a>
+    <a href="menu_terminado.html" class="menu-button">📦 Producto Terminado</a>
 </body>
 </html>

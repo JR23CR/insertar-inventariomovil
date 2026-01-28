@@ -9,56 +9,68 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
         :root {
-            --primary: #2c3e50;
-            --accent: #27ae60;
-            --bg: #f4f7f6;
+            --primary: #1A237E; /* Azul Marino Ticket */
+            --accent: #1A237E;  /* Unificamos acento al azul */
+            --bg: #F5F7F9;      /* Fondo Gris Claro */
+            --text-dark: #2c3e50;
+            --text-gray: #95a5a6;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             margin: 0;
-            padding: 15px;
-            color: var(--primary);
+            padding: 10px; /* Padding reducido para ganar espacio */
+            color: var(--text-dark);
         }
-        .container { max-width: 600px; margin: 0 auto; }
-        h2 { text-align: center; font-size: 1.2rem; }
+        .container { max-width: 100%; }
+        h2 { text-align: center; font-size: 1.2rem; color: var(--primary); margin: 10px 0; }
         
         .card {
             background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            padding: 12px; /* Compacto */
+            border-radius: 16px; /* Bordes redondeados estilo Ticket */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); /* Sombra sutil */
+            margin-bottom: 15px;
         }
 
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
+        label { display: block; margin-top: 8px; font-weight: 700; font-size: 0.8rem; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
         input, select {
             width: 100%;
-            padding: 12px;
-            margin-top: 5px;
-            border: 1px solid #ddd;
+            padding: 10px; /* Ligeramente más compacto */
+            margin-top: 4px;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 1rem;
+            background-color: #fafafa;
+            color: var(--text-dark);
+        }
+        input:focus, select:focus {
+            background-color: #fff;
+            border-color: var(--primary);
+            outline: none;
         }
 
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         .compact-input { padding: 8px; font-size: 0.9rem; height: 38px; }
 
         button {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin-top: 10px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
+            transition: opacity 0.2s;
         }
-        .btn-add { background-color: var(--accent); color: white; }
-        .btn-export { background-color: var(--primary); color: white; }
+        button:active { opacity: 0.8; }
+
+        .btn-add { background-color: var(--primary); color: white; }
+        .btn-export { background-color: var(--text-dark); color: white; }
         .btn-print { background-color: #fff; border: 2px solid var(--primary); color: var(--primary); }
-        .btn-bt { background-color: #7f8c8d; color: white; margin-bottom: 15px; }
+        .btn-bt { background-color: #e0e6ed; color: var(--text-dark); margin-bottom: 10px; box-shadow: none; }
 
         /* Estilo de la Etiqueta para Impresión */
         #label-template {
@@ -75,22 +87,24 @@
         }
 
         .row-item {
-            background: #eee;
-            padding: 8px;
-            margin-top: 5px;
-            border-radius: 4px;
-            font-size: 0.8rem;
+            background: #fff;
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 8px;
+            font-size: 0.85rem;
             display: flex;
             justify-content: space-between;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
         
         /* Estilos para la tabla de detalles */
         .detail-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .detail-table th { background: #eee; padding: 5px; font-size: 0.8rem; text-align: left; }
-        .detail-table td { padding: 5px; border-bottom: 1px solid #ddd; }
+        .detail-table th { background: #f8f9fa; padding: 6px; font-size: 0.75rem; text-align: left; color: var(--text-gray); text-transform: uppercase; }
+        .detail-table td { padding: 6px; border-bottom: 1px solid #f0f0f0; }
         .detail-table input { margin: 0; padding: 8px; }
-        .btn-small { padding: 8px; margin: 0; width: auto; background: var(--accent); color: white; }
-        .btn-del { background: #e74c3c; color: white; width: auto; padding: 5px 10px; margin: 0; }
+        .btn-small { padding: 6px 10px; margin: 0; width: auto; background: var(--primary); color: white; border-radius: 6px; font-size: 0.8rem; }
+        .btn-del { background: #ff5252; color: white; width: auto; padding: 6px 10px; margin: 0; border-radius: 6px; }
 
         /* Estilo de la Etiqueta para Impresión (4x3 pulgadas) */
         #label-template {
@@ -151,17 +165,18 @@
         
         .quick-btn {
             padding: 15px 0;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
             text-align: center;
             font-weight: bold;
+            color: var(--text-dark);
             cursor: pointer;
             user-select: none; /* Evita zoom/selección al tocar rápido */
             touch-action: manipulation;
         }
-        .quick-btn.active { background-color: var(--accent); color: white; border-color: var(--accent); }
-        .quick-btn:active { transform: scale(0.95); background-color: #ddd; }
+        .quick-btn.active { background-color: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 8px rgba(26, 35, 126, 0.2); }
+        .quick-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -169,7 +184,7 @@
 <div class="container">
     <h2>Registro de Inventario</h2>
     
-    <button class="btn-bt" onclick="conectarBluetooth()">📡 CONECTAR IMPRESORA BLUETOOTH (Bluefy)</button>
+    <button class="btn-bt" onclick="conectarBluetooth()">📡 Conectar Impresora BT</button>
 
     <div class="card">
         <div class="grid-3">
@@ -212,23 +227,23 @@
         
         <!-- PANEL TÁCTIL (Sin Teclado) -->
         <div style="margin-bottom: 15px;">
-            <label style="color:var(--accent);">1. Selecciona Piezas (Desliza ↔):</label>
+            <label style="color:var(--primary);">1. Selecciona Piezas (Desliza ↔):</label>
             <div id="quick-piezas" class="slider-container"></div>
             
-            <label style="color:var(--accent); margin-top:10px;">2. Toca Largo para AGREGAR (Desliza ↔):</label>
+            <label style="color:var(--primary); margin-top:10px;">2. Toca Largo para AGREGAR (Desliza ↔):</label>
             <div id="quick-largos" class="slider-container"></div>
         </div>
 
         <hr>
 
         <!-- Entrada Rápida -->
-        <div style="background: #e8f6f3; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-            <label style="margin-top:0; color: var(--accent);">AGREGAR PIEZAS (Enter para agregar)</label>
+        <div style="background: #f0f4f8; padding: 10px; border-radius: 12px; margin-bottom: 10px;">
+            <label style="margin-top:0; color: var(--primary);">AGREGAR PIEZAS (Enter para agregar)</label>
             <div style="display: flex; gap: 5px; align-items: center;">
                 <input type="number" id="newPiezas" class="compact-input" placeholder="Pzs" style="flex:1;">
                 <span style="font-weight:bold;">x</span>
                 <input type="number" id="newLargo" class="compact-input" placeholder="Largo" style="flex:1;">
-                <button class="btn-small" onclick="agregarLinea()" style="width:auto; height:38px; margin:0;">➕</button>
+                <button class="btn-small" onclick="agregarLinea()" style="width:auto; height:38px; margin:0; background: var(--primary);">➕</button>
             </div>
         </div>
 
@@ -245,7 +260,7 @@
             </tbody>
         </table>
         
-        <button class="btn-add" onclick="agregarFardo()">GUARDAR FARDO EN LOTE</button>
+        <button class="btn-add" onclick="agregarFardo()">Guardar Fardo</button>
     </div>
 
     <div class="card">
@@ -253,7 +268,6 @@
         <div id="listaFardos"></div>
         <button class="btn-export" onclick="exportarExcel()">EXPORTAR A EXCEL</button>
     </div>
-    <a href="menu_terminado.html" style="display:block; text-align:center; margin-top:20px; color:#7f8c8d; text-decoration:none; font-weight:bold;">⬅ Volver al Menú</a>
 </div>
 
 <div id="label-template">
@@ -321,7 +335,7 @@
     };
 
     function cargarInventarioRemoto() {
-        fetch(GOOGLE_SCRIPT_URL + "?sheet=PRODUCTO TERMINADO")
+        fetch(GOOGLE_SCRIPT_URL)
         .then(response => response.json())
         .then(data => {
             inventarioRemoto = data;
@@ -362,7 +376,7 @@
             
             // Feedback visual al tocar
             const originalBg = btn.style.backgroundColor;
-            btn.style.backgroundColor = '#27ae60';
+            btn.style.backgroundColor = '#1A237E';
             btn.style.color = 'white';
             setTimeout(() => {
                 btn.style.backgroundColor = originalBg;
@@ -470,8 +484,7 @@
                 ancho: anchoGlobal,
                 especie: document.getElementById('especie').value,
                 detalles: [...currentDetalles], // Copia del array
-                m2: totalM2.toFixed(2),
-                sheetName: "PRODUCTO TERMINADO" // Indicamos la hoja destino explícitamente
+                m2: totalM2.toFixed(2)
             };
 
             if(!fardo.lote || !fardo.fardoNo) {
@@ -565,8 +578,8 @@
         remotos.forEach(f => {
             const item = document.createElement('div');
             item.className = 'row-item';
-            item.style.backgroundColor = '#eafaf1'; // Verde muy claro
-            item.style.borderLeft = '4px solid #27ae60';
+            item.style.backgroundColor = '#f8f9fa'; 
+            item.style.borderLeft = '4px solid #95a5a6';
             item.innerHTML = `
                 <span>☁️ Fardo: ${f['# Fardo']} (${f['M2']} m²)</span>
                 <span style="font-size:0.8rem; color:#666;">${f['Calidad'] || ''}</span>
@@ -586,10 +599,10 @@
             item.innerHTML = `
                 <span>Fardo: ${f.fardoNo} (${totalPiezas} pzs - ${f.m2} m2)</span> 
                 <div style="display:flex; gap:5px;">
-                    <button onclick="imprimir(${index})" class="btn-small" style="width:auto;">Print</button>
+                    <button onclick="imprimir(${index})" class="btn-small" style="width:auto; background:#2c3e50;">Print</button>
                     <button onclick="guardarImagen(${index})" class="btn-small" style="background:#3498db; width:auto;">Img</button>
                     <button onclick="imprimirBluetooth(${index})" class="btn-small" style="background:#e67e22; width:auto;">BT</button>
-                    <button onclick="editarFardo(${index})" class="btn-small" style="background:#f1c40f; width:auto; margin-left:5px;">✏️</button>
+                    <button onclick="editarFardo(${index})" class="btn-small" style="background:#f1c40f; width:auto; margin-left:5px; color:black;">✏️</button>
                     <button onclick="eliminarFardo(${index})" class="btn-del" style="width:auto; margin-left:5px;">🗑️</button>
                 </div>`;
             lista.appendChild(item);
@@ -774,62 +787,57 @@
         const f = fardosData[index];
         const encoder = new TextEncoder();
         
+        // --- CAMBIO A LENGUAJE TSPL (Específico para Etiquetas) ---
+        // Si salía en blanco, es porque la impresora esperaba este formato.
+        
         let cmd = "";
-        // Configuración 4x4 pulgadas (según tu plantilla)
-        cmd += "SIZE 4,4\r\n"; 
-        cmd += "GAP 0.12,0\r\n";
-        cmd += "DIRECTION 1\r\n";
-        cmd += "CLS\r\n";
-        cmd += "DENSITY 12\r\n";
-
-        // --- MARCO EXTERIOR ---
-        cmd += "BOX 10, 10, 790, 790, 3\r\n";
-
-        // --- ENCABEZADO ---
-        // Barcode centrado (X=220 aprox para ancho 4")
-        cmd += `BARCODE 220,30,"128",45,1,0,2,2,"${f.fardoNo}"\r\n`;
+        // 1. Configurar tamaño 4x3 pulgadas
+        cmd += "SIZE 4,3\r\n"; 
+        cmd += "GAP 2 mm,0\r\n"; // Espacio entre etiquetas
+        cmd += "DIRECTION 1\r\n"; // Dirección de impresión
+        cmd += "CLS\r\n";        // Limpiar memoria
+        cmd += "DENSITY 12\r\n"; // <--- IMPORTANTE: Aumentar oscuridad (0-15)
         
-        // Lote y Fardo
-        cmd += `TEXT 320,90,"3",0,1,1,"Lote: ${f.lote}"\r\n`;
-        cmd += `TEXT 200,135,"3",0,1,1,"FARDO: ${f.fardoNo}   -   ${f.m2} M2"\r\n`;
+        // 2. Dibujar contenido (Coordenadas X, Y)
+        // TEXT x,y,"font",rotacion,anchoX,altoY,"texto"
         
-        cmd += `BAR 10, 185, 780, 2\r\n`;
+        // --- CÓDIGO DE BARRAS (Centrado, Más largo, Sin números) ---
+        // BARCODE X,Y,"128",height,human_readable,rotation,narrow,wide,"content"
+        // human_readable=0 (Quitar número)
+        // height=100 (Más alto)
+        // narrow=3, wide=3 (Más ancho/largo horizontalmente)
+        // X=150 (Ajustado para centrar el código más ancho)
+        cmd += `BARCODE 150,20,"128",60,0,0,3,3,"${f.fardoNo}"\r\n`;
 
-        // --- PRODUCTO ---
-        cmd += `TEXT 50,210,"3",0,1,1,"${f.producto}"\r\n`;
-        cmd += `TEXT 50,250,"3",0,1,1,"${f.grosor} x ${f.ancho} pulg  -  ${f.especie}"\r\n`;
+        // Lote (Centrado aprox)
+        cmd += `TEXT 280,130,"3",0,1,1,"Lote: ${f.lote}"\r\n`;
+
+        // Fardo y M2 (Centrados en una línea)
+        cmd += `TEXT 180,170,"3",0,1,1,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`;
         
-        cmd += `BAR 10, 290, 780, 2\r\n`;
-
-        // --- ENCABEZADO DE TABLA ---
-        cmd += `TEXT 100,315,"3",0,1,1,"LARGO"\r\n`;
-        cmd += `TEXT 400,315,"3",0,1,1,"PIEZAS"\r\n`;
-        cmd += `TEXT 700,315,"3",0,1,1,"M2"\r\n`;
+        // Línea separadora
+        cmd += `BAR 30,210, 750, 4\r\n`;
         
-        cmd += `BAR 10, 345, 780, 1\r\n`;
-
-        // --- DATOS DE LA TABLA ---
+        // Detalles del producto (Centrado aprox)
+        cmd += `TEXT 250,230,"3",0,1,1,"${f.producto}"\r\n`;
+        // Especie y medidas
+        cmd += `TEXT 150,270,"3",0,1,1,"${f.grosor} x ${f.ancho} pulg - ${f.especie}"\r\n`;
+        
+        cmd += `BAR 30,310, 750, 4\r\n`;
+        
+        // Tabla de Piezas (Centrar encabezados en sus mitades)
+        cmd += `TEXT 150,330,"3",0,1,1,"Piezas"\r\n`;
+        cmd += `TEXT 550,330,"3",0,1,1,"Largo"\r\n`;
+        
+        // Filas dinámicas
         let y = 370;
-        const anchoVal = parseFloat(f.ancho) || 0;
-        
         f.detalles.forEach(d => {
-            if(y < 510) { // Limite antes de totales
-                // Calcular M2 por línea
-                const m2Linea = (d.piezas * (d.largo * 0.3048) * (anchoVal * 0.0254)).toFixed(2);
-                
-                cmd += `TEXT 100,${y},"3",0,1,1,"${d.largo}"\r\n`;
-                cmd += `TEXT 400,${y},"3",0,1,1,"${d.piezas}"\r\n`;
-                cmd += `TEXT 700,${y},"3",0,1,1,"${m2Linea}"\r\n`;
-                y += 35;
+            if(y < 580) { // Evitar imprimir fuera de la etiqueta
+                cmd += `TEXT 170,${y},"3",0,1,1,"${d.piezas}"\r\n`;
+                cmd += `TEXT 570,${y},"3",0,1,1,"${d.largo}"\r\n`;
+                y += 40; // Más espacio entre líneas por fuente más grande
             }
         });
-
-        // --- TOTALES ---
-        cmd += `BAR 10, 520, 780, 2\r\n`;
-        
-        const totalPiezas = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
-        cmd += `TEXT 60,550,"3",0,1,1,"TOTAL PIEZAS: ${totalPiezas}"\r\n`;
-        cmd += `TEXT 450,550,"3",0,1,1,"TOTAL: ${f.m2} M2"\r\n`;
 
         cmd += "PRINT 1\r\n"; // Orden final de imprimir
 

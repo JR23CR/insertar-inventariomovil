@@ -6,25 +6,26 @@
     <title>Check List de Fardos</title>
     <style>
         :root {
-            --primary: #2c3e50;
-            --accent: #3498db; /* Azul para Check List */
-            --bg: #f4f7f6;
+            --primary: #1A237E;
+            --bg: #F5F7F9;
+            --card-bg: #FFFFFF;
+            --text-dark: #2c3e50;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             margin: 0;
-            padding: 15px;
-            color: var(--primary);
+            padding: 20px;
+            color: var(--text-dark);
         }
-        .container { max-width: 600px; margin: 0 auto; }
-        h2 { text-align: center; font-size: 1.2rem; margin-bottom: 20px; }
+        .container { max-width: 100%; }
+        h2 { text-align: center; font-size: 1.5rem; margin-bottom: 20px; color: var(--primary); }
         
         .card {
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             margin-bottom: 20px;
             text-align: center;
         }
@@ -33,31 +34,34 @@
             width: 100%;
             padding: 15px;
             margin-top: 10px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
             box-sizing: border-box;
             font-size: 1.5rem; /* Letra grande para ver bien */
             text-align: center;
+            background-color: #fafafa;
+            outline: none;
         }
+        input:focus { background-color: #fff; border-color: var(--primary); }
 
         button {
             width: 100%;
-            padding: 12px;
-            margin-top: 10px;
+            padding: 16px;
+            margin-top: 15px;
             border: none;
-            border-radius: 8px;
+            border-radius: 15px;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
-            background-color: var(--accent);
+            background-color: var(--primary);
             color: white;
         }
         
-        .btn-back { background-color: #95a5a6; margin-top: 20px; text-decoration: none; display: inline-block; }
+        .btn-back { background-color: #e0e6ed; color: var(--text-dark); margin-top: 20px; text-decoration: none; display: inline-block; }
 
         #status { font-size: 0.9rem; color: #666; margin-bottom: 10px; font-weight: bold; }
         
-        .result-card { text-align: left; margin-top: 15px; transition: all 0.3s ease; }
+        .result-card { text-align: left; margin-top: 15px; transition: all 0.3s ease; border-radius: 20px; }
         .result-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; }
         .result-label { font-weight: bold; color: #555; }
         .result-val { font-weight: bold; color: #000; }
@@ -78,7 +82,7 @@
 
     <div id="resultado"></div>
 
-    <a href="menu_terminado.html"><button class="btn-back">⬅ Volver al Menú</button></a>
+    <a href="index.html"><button class="btn-back">⬅ Volver al Menú</button></a>
 </div>
 
 <script>
@@ -99,7 +103,7 @@
         status.innerText = "🔄 Descargando inventario de Google Sheets...";
         status.style.color = "#e67e22";
         
-        fetch(GOOGLE_SCRIPT_URL + "?sheet=PRODUCTO TERMINADO")
+        fetch(GOOGLE_SCRIPT_URL)
         .then(response => {
             if (!response.ok) throw new Error("Error de conexión con Google Sheets");
             return response.text();
