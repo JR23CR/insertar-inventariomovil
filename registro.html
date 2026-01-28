@@ -798,23 +798,23 @@
         // --- SECCIÓN SUPERIOR ---
         const barcodeId = `${f.lote}-${f.fardoNo}`;
         cmd += `BARCODE 400,20,"128",40,1,0,2,2,2,"${barcodeId}"\r\n`; // Centered barcode
-        cmd += `TEXT 400,75,"ROMAN.TTF",0,12,12,2,"Lote: ${f.lote}"\r\n`;
-        cmd += `TEXT 400,105,"ROMAN.TTF",0,10,10,2,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`;
+        cmd += `TEXT 400,75,"3",0,1,1,2,"Lote: ${f.lote}"\r\n`;
+        cmd += `TEXT 400,105,"3",0,1,1,2,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`;
 
         // Primera línea divisoria
         cmd += `BAR 40,135,720,2\r\n`;
 
         // --- SECCIÓN CENTRAL ---
-        cmd += `TEXT 400,155,"ROMAN.TTF",0,12,12,2,"${f.producto}"\r\n`;
-        cmd += `TEXT 400,190,"ROMAN.TTF",0,10,10,2,"${f.grosor} x ${f.ancho} pulg  -  ${f.especie}"\r\n`;
+        cmd += `TEXT 400,155,"3",0,1,1,2,"${f.producto}"\r\n`;
+        cmd += `TEXT 400,190,"3",0,1,1,2,"${f.grosor} x ${f.ancho} pulg  -  ${f.especie}"\r\n`;
 
         // Segunda línea divisoria
         cmd += `BAR 40,220,720,2\r\n`;
 
         // --- ENCABEZADO DE TABLA ---
-        cmd += `TEXT 60,240,"ROMAN.TTF",0,10,10,"LARGO"\r\n`;
-        cmd += `TEXT 350,240,"ROMAN.TTF",0,10,10,"PIEZAS"\r\n`;
-        cmd += `TEXT 650,240,"ROMAN.TTF",0,10,10,"M2"\r\n`;
+        cmd += `TEXT 60,240,"3",0,1,1,"LARGO"\r\n`;
+        cmd += `TEXT 350,240,"3",0,1,1,"PIEZAS"\r\n`;
+        cmd += `TEXT 650,240,"3",0,1,1,"M2"\r\n`;
 
         // --- DATOS DE LA TABLA ---
         let y = 270;
@@ -822,9 +822,9 @@
             if (y < 500) { // Limitar filas para que quepan en etiqueta de 3"
                 const m2_linea = d.piezas * (d.largo * 0.3048) * (f.ancho * 0.0254);
 
-                cmd += `TEXT 60,${y},"ROMAN.TTF",0,12,12,"${d.largo.toFixed(2)}"\r\n`;
-                cmd += `TEXT 350,${y},"ROMAN.TTF",0,12,12,"${d.piezas}"\r\n`;
-                cmd += `TEXT 650,${y},"ROMAN.TTF",0,12,12,"${m2_linea.toFixed(2)}"\r\n`;
+                cmd += `TEXT 60,${y},"3",0,1,1,"${d.largo.toFixed(2)}"\r\n`;
+                cmd += `TEXT 350,${y},"3",0,1,1,"${d.piezas}"\r\n`;
+                cmd += `TEXT 650,${y},"3",0,1,1,"${m2_linea.toFixed(2)}"\r\n`;
                 y += 35; // Incremento reducido para más filas
             }
         });
@@ -832,8 +832,8 @@
         // --- TOTALES ---
         cmd += `BAR 40,510,720,2\r\n`;
         const fardoTotalPiezas = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
-        cmd += `TEXT 60,540,"ROMAN.TTF",0,10,10,"TOTAL PIEZAS: ${fardoTotalPiezas}"\r\n`;
-        cmd += `TEXT 740,540,"ROMAN.TTF",0,10,10,2,"TOTAL: ${f.m2} M2"\r\n`;
+        cmd += `TEXT 60,540,"3",0,1,1,"TOTAL PIEZAS: ${fardoTotalPiezas}"\r\n`;
+        cmd += `TEXT 740,540,"3",0,1,1,2,"TOTAL: ${f.m2} M2"\r\n`;
 
         cmd += "PRINT 1,1\r\n";
 
