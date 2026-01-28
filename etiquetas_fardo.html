@@ -144,9 +144,20 @@
         const agrupado = {};
         
         data.forEach(row => {
-            // Normalizar claves (Google Sheets a veces cambia headers)
-            const lote = row['# Lote'] || row['Lote'];
-            const fardoNo = row['# Fardo'] || row['Fardo'];
+            // Helper para buscar valor ignorando mayúsculas/espacios y variaciones
+            const getVal = (keys) => {
+                if (!Array.isArray(keys)) keys = [keys];
+                for (const k of keys) {
+                    if (row[k] !== undefined && row[k] !== "") return row[k];
+                    // Búsqueda insensible a mayúsculas/minúsculas
+                    const foundKey = Object.keys(row).find(rk => rk.trim().toLowerCase() === k.toLowerCase());
+                    if (foundKey && row[foundKey] !== "") return row[foundKey];
+                }
+                return null;
+            };
+
+            const lote = getVal(['# Lote', 'Lote', 'lote']);
+            const fardoNo = getVal(['# Fardo', 'Fardo', 'fardo']);
             
             if (!lote || !fardoNo) return;
 
@@ -156,30 +167,53 @@
                 agrupado[key] = {
                     lote: lote,
                     fardoNo: fardoNo,
-                    producto: row['Producto'] || row['Calidad'] || '',
-                    especie: row['Especie'] || '',
-                    grosor: formatearGrosor(row['Grosor "'] || row['Grosor']),
-                    ancho: row['Ancho "'] || row['Ancho'],
+                    producto: getVal(['Producto', 'Calidad', 'producto']) || '',
+                    especie: getVal(['Especie', 'especie']) || '',
+                    grosor: formatearGrosor(getVal(['Grosor "', 'Grosor', 'grosor'])),
+                    ancho: parseFloat(getVal(['Ancho "', 'Ancho', 'ancho'])) || 0,
                     m2: 0,
                     detalles: []
                 };
             }
 
-            // Intentar extraer detalles si vienen en filas separadas
-            const pzs = parseInt(row['Piezas']) || parseInt(row['Total Piezas']) || 0;
-            const largo = parseFloat(row['Largo'] || row['Largo_Ft']) || 0;
-            const m2Row = parseFloat(row['M2']) || 0;
-
-            agrupado[key].m2 += m2Row;
+            // 1. Intentar leer columnas planas (si el sheet tiene filas desglosadas)
+            const pzs = parseInt(getVal(['Piezas', 'Total Piezas', 'Pzs', 'piezas', 'CANTIDAD'])) || 0;
+            const largo = parseFloat(getVal(['Largo', 'Largo_Ft', 'Largo (ft)', 'largo', 'LENGTH'])) || 0;
             
-            // Si hay desglose de piezas, lo agregamos
             if (pzs > 0 && largo > 0) {
                 agrupado[key].detalles.push({ piezas: pzs, largo: largo });
             }
+
+            // 2. Intentar leer columna 'Detalles' JSON (si existe)
+            const detallesJSON = getVal(['Detalles', 'detalles', 'Items']);
+            if (detallesJSON && typeof detallesJSON === 'string' && (detallesJSON.startsWith('[') || detallesJSON.startsWith('{'))) {
+                try {
+                    const parsed = JSON.parse(detallesJSON);
+                    const arr = Array.isArray(parsed) ? parsed : (parsed.detalles || []);
+                    arr.forEach(d => {
+                        agrupado[key].detalles.push({
+                            piezas: parseInt(d.piezas || d.Piezas || d.pzs),
+                            largo: parseFloat(d.largo || d.Largo || d.l)
+                        });
+                    });
+                } catch(e) {}
+            }
+
+            // Leer M2 (si no hay detalles, usaremos este valor; si hay, lo recalcularemos)
+            const m2Row = parseFloat(getVal(['M2', 'm2', 'M2_Total_Fardo'])) || 0;
+            if (m2Row > agrupado[key].m2) agrupado[key].m2 = m2Row;
         });
 
         // Convertir a array y redondear M2
         inventarioAgrupado = Object.values(agrupado).map(f => {
+            // Si tenemos detalles, RECALCULAMOS M2 para asegurar precisión y evitar duplicados de suma
+            if (f.detalles.length > 0 && f.ancho > 0) {
+                let m2Calc = 0;
+                f.detalles.forEach(d => {
+                    m2Calc += d.piezas * (d.largo * 0.3048) * (f.ancho * 0.0254);
+                });
+                f.m2 = parseFloat(m2Calc.toFixed(2));
+            }
             f.m2 = parseFloat(f.m2.toFixed(2));
             return f;
         });
