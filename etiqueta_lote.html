@@ -324,9 +324,12 @@
         // QRCODE x,y,ECC,cell,mode,rot,model,mask,"content"
         cmd += `QRCODE 60,30,L,8,A,0,M2,S7,"${d.lote}"\r\n`;
 
-        // 2. LOTE a la derecha del QR
+        // 2. LOTE a la derecha del QR, alineado a la izquierda
         cmd += `TEXT 280,60,"3",0,1,1,"LOTE:"\r\n`;
-        cmd += `TEXT 280,100,"0",0,12,12,"${d.lote}"\r\n`; // Fuente 0 escalable
+
+        // Usamos fuente "4" pero con multiplicador 1,1 para que sea nítido.
+        // Si lo quieres más grande, usa 1,2 (solo crece hacia abajo)
+        cmd += `TEXT 280,100,"4",0,1,1,"${d.lote}"\r\n`;
 
         // 3. Detalles Centrados (Producto, Especie, Medidas)
         // Ajustamos Y para que queden debajo del bloque QR/Lote

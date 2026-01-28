@@ -800,7 +800,7 @@
         const barcodeId = f.fardoNo;
         // Volver a un diseño centrado, que es el preferido por el usuario.
         // BARCODE [X,Y,"TYPE",H,READABLE,ROT,NARROW,WIDE,ALIGNMENT,"CONTENT"]
-// Quitamos el ",2," antes de la variable
+        // Quitamos el ",2," antes de la variable
         cmd += `BARCODE 60,20,"128",60,1,0,3,3,"${barcodeId}"\r\n`;        // TEXT [X,Y,"FONT",ROT,X-MULT,Y-MULT,ALIGNMENT,"TEXT"]
         cmd += `TEXT 300,125,"3",0,1,1,2,"Lote: ${f.lote}"\r\n`; // Centrado
         // --- SECCION FARDO ---
