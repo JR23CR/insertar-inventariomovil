@@ -160,12 +160,20 @@
             width: 100%; border-radius: 10px; margin-top: 10px; font-weight: bold;
         }
         .btn-gps { background-color: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-mapa-general {
+            background-color: #3498db; color: white; text-decoration: none; display: block;
+            text-align: center; padding: 15px; border-radius: 15px; font-weight: bold;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>📂 Base de Datos Resumida</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 style="margin: 0; font-size: 1.5rem; color: var(--primary);">📂 Base de Datos</h2>
+        <a href="mapa_ubicaciones.html" class="btn-mapa-general" style="margin-top: 0; width: auto; padding: 10px 15px; font-size: 0.9rem;">🗺️ Ver Mapa</a>
+    </div>
 
     <div class="card">
         <input type="text" id="searchInput" placeholder="🔍 Buscar por Fardo, Especie o Calidad..." oninput="filtrarTabla()">
@@ -189,7 +197,7 @@
         </div>
     </div>
 
-    <a href="menu_aserrada.html" class="btn-back">⬅ Volver al Menú</a>
+    <a href="menu_aserrada.html" class="btn-back" style="margin-top: 10px;">⬅ Volver al Menú Principal</a>
 </div>
 
 <!-- Modal de Detalles y Ubicación -->
@@ -215,7 +223,6 @@
             </div>
 
             <button id="btnSaveLoc" class="btn-save-loc" onclick="guardarUbicacion()" disabled>💾 Guardar Ubicación</button>
-            <button id="btnMap" class="btn-map" onclick="verEnMapa()" disabled>🗺️ Ver en Mapa</button>
         </div>
     </div>
 </div>
@@ -360,11 +367,6 @@
         document.getElementById('btnSaveLoc').style.backgroundColor = "#95a5a6";
         document.getElementById('btnSaveLoc').innerText = "💾 Guardar Ubicación";
         
-        const btnMap = document.getElementById('btnMap');
-        btnMap.disabled = !item.ubicacion || item.ubicacion === 'No definida';
-        btnMap.style.opacity = btnMap.disabled ? '0.7' : '1';
-        btnMap.style.cursor = btnMap.disabled ? 'not-allowed' : 'pointer';
-        
         document.getElementById('modalDetalle').style.display = 'flex';
     }
 
@@ -476,23 +478,6 @@
             btn.innerText = "💾 Reintentar Guardar";
             btn.disabled = false;
         });
-    }
-
-    function verEnMapa() {
-        if (!currentFardo || !currentFardo.ubicacion || currentFardo.ubicacion === 'No definida') {
-            alert("No hay una ubicación definida para este fardo.");
-            return;
-        }
-
-        // Extraer Latitud y Longitud del formato "Lat, Lon (Acc: Xm)"
-        const match = currentFardo.ubicacion.match(/(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
-        if (match && match.length >= 3) {
-            const lat = match[1];
-            const lon = match[2];
-            window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
-        } else {
-            alert("Formato de ubicación no reconocido: " + currentFardo.ubicacion);
-        }
     }
 </script>
 
