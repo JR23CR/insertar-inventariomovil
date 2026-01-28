@@ -788,57 +788,52 @@
         const encoder = new TextEncoder();
         
         let cmd = "";
-        // Applying new format based on user request for "producto terminado"
-        cmd += "SIZE 4,4\r\n"; 
+        // Adjusting for 4x3 inch labels
+        cmd += "SIZE 4,3\r\n"; 
         cmd += "GAP 0.12,0\r\n";
-        cmd += "DIRECTION 1\r\n"; // Dirección de impresión
-        cmd += "CLS\r\n";        // Limpiar memoria
-        cmd += "DENSITY 12\r\n"; // <--- IMPORTANTE: Aumentar oscuridad (0-15)
-        
-        // --- MARCO EXTERIOR ---
-        cmd += "BOX 10,10,790,790,3\r\n";
+        cmd += "DIRECTION 1\r\n";
+        cmd += "CLS\r\n";
+        cmd += "DENSITY 12\r\n";
 
-        // --- ENCABEZADO ---
+        // --- SECCIÓN SUPERIOR ---
         const barcodeId = `${f.lote}-${f.fardoNo}`;
-        // BARCODE X,Y,"TYPE",HEIGHT,HUMAN_READABLE,ROTATION,NARROW,WIDE,[ALIGNMENT],"CONTENT"
-        cmd += `BARCODE 400,30,"128",45,1,0,2,2,2,"${barcodeId}"\r\n`; // Added center alignment
-        // TEXT X,Y,"FONT",ROTATION,X-MULT,Y-MULT,[ALIGNMENT],"CONTENT"
-        cmd += `TEXT 400,90,"3",0,1,1,2,"Lote: ${f.lote}"\r\n`;
-        cmd += `TEXT 400,135,"3",0,1,1,2,"FARDO: ${f.fardoNo}   -   ${f.m2} M2"\r\n`;
-        cmd += `BAR 10,185,780,2\r\n`;
+        cmd += `BARCODE 400,20,"128",40,1,0,2,2,2,"${barcodeId}"\r\n`; // Centered barcode
+        cmd += `TEXT 400,75,"ROMAN.TTF",0,12,12,2,"Lote: ${f.lote}"\r\n`;
+        cmd += `TEXT 400,105,"ROMAN.TTF",0,10,10,2,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`;
 
-        // --- PRODUCTO ---
-        cmd += `TEXT 400,210,"3",0,1,1,2,"${f.producto.toUpperCase()}"\r\n`;
-        cmd += `TEXT 400,250,"3",0,1,1,2,"${f.grosor} x ${f.ancho} pulg - ${f.especie.toUpperCase()}"\r\n`;
-        cmd += `BAR 10,290,780,2\r\n`;
+        // Primera línea divisoria
+        cmd += `BAR 40,135,720,2\r\n`;
+
+        // --- SECCIÓN CENTRAL ---
+        cmd += `TEXT 400,155,"ROMAN.TTF",0,12,12,2,"${f.producto}"\r\n`;
+        cmd += `TEXT 400,190,"ROMAN.TTF",0,10,10,2,"${f.grosor} x ${f.ancho} pulg  -  ${f.especie}"\r\n`;
+
+        // Segunda línea divisoria
+        cmd += `BAR 40,220,720,2\r\n`;
 
         // --- ENCABEZADO DE TABLA ---
-        cmd += `TEXT 100,315,"3",0,1,1,"LARGO"\r\n`; // Left align is default
-        cmd += `TEXT 400,315,"3",0,1,1,2,"PIEZAS"\r\n`;
-        cmd += `TEXT 700,315,"3",0,1,1,2,"M2"\r\n`;
-        cmd += `BAR 10,345,780,1\r\n`;
+        cmd += `TEXT 60,240,"ROMAN.TTF",0,10,10,"LARGO"\r\n`;
+        cmd += `TEXT 350,240,"ROMAN.TTF",0,10,10,"PIEZAS"\r\n`;
+        cmd += `TEXT 650,240,"ROMAN.TTF",0,10,10,"M2"\r\n`;
 
         // --- DATOS DE LA TABLA ---
-        let y = 370;
-        let totalPiezas = 0;
+        let y = 270;
         f.detalles.forEach(d => {
-            if (y < 500) { // Limit rows to fit on label
+            if (y < 500) { // Limitar filas para que quepan en etiqueta de 3"
                 const m2_linea = d.piezas * (d.largo * 0.3048) * (f.ancho * 0.0254);
-                totalPiezas += d.piezas;
 
-                cmd += `TEXT 100,${y},"3",0,1,1,"${d.largo.toFixed(2)}"\r\n`;
-                cmd += `TEXT 400,${y},"3",0,1,1,2,"${d.piezas}"\r\n`;
-                cmd += `TEXT 700,${y},"3",0,1,1,2,"${m2_linea.toFixed(2)}"\r\n`;
-                y += 45;
+                cmd += `TEXT 60,${y},"ROMAN.TTF",0,12,12,"${d.largo.toFixed(2)}"\r\n`;
+                cmd += `TEXT 350,${y},"ROMAN.TTF",0,12,12,"${d.piezas}"\r\n`;
+                cmd += `TEXT 650,${y},"ROMAN.TTF",0,12,12,"${m2_linea.toFixed(2)}"\r\n`;
+                y += 35; // Incremento reducido para más filas
             }
         });
 
         // --- TOTALES ---
-        cmd += `BAR 10,520,780,2\r\n`;
-        cmd += `TEXT 60,550,"3",0,1,1,"TOTAL PIEZAS: ${totalPiezas}"\r\n`;
-        const totalM2Text = `TOTAL: ${f.m2} M2`;
-        // Right align total M2
-        cmd += `TEXT 740,550,"3",0,1,1,3,"${totalM2Text}"\r\n`;
+        cmd += `BAR 40,510,720,2\r\n`;
+        const fardoTotalPiezas = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
+        cmd += `TEXT 60,540,"ROMAN.TTF",0,10,10,"TOTAL PIEZAS: ${fardoTotalPiezas}"\r\n`;
+        cmd += `TEXT 740,540,"ROMAN.TTF",0,10,10,2,"TOTAL: ${f.m2} M2"\r\n`;
 
         cmd += "PRINT 1,1\r\n";
 
