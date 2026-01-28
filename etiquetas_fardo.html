@@ -177,8 +177,8 @@
             }
 
             // 1. Intentar leer columnas planas (si el sheet tiene filas desglosadas)
-            const pzs = parseInt(getVal(['Piezas', 'Total Piezas', 'Pzs', 'piezas', 'CANTIDAD'])) || 0;
-            const largo = parseFloat(getVal(['Largo', 'Largo_Ft', 'Largo (ft)', 'largo', 'LENGTH'])) || 0;
+            const pzs = parseInt(getVal(['Piezas', 'Total Piezas', 'Pzs', 'piezas', 'CANTIDAD', 'Cant', 'PZ'])) || 0;
+            const largo = parseFloat(getVal(['Largo', 'Largo \'', 'Largo\'', 'Largo_Ft', 'Largo (ft)', 'largo', 'LENGTH', 'Largo_Pies', 'LG'])) || 0;
             
             if (pzs > 0 && largo > 0) {
                 agrupado[key].detalles.push({ piezas: pzs, largo: largo });
@@ -258,7 +258,7 @@
                 <div>
                     <div class="fardo-title">Fardo #${f.fardoNo}</div>
                     <div class="fardo-info">${f.producto} - ${f.especie}</div>
-                    <div class="fardo-info">${f.m2} m²</div>
+                    <div class="fardo-info">${f.m2} m² ${f.detalles.length > 0 ? '✅' : '⚠️ Sin detalles'}</div>
                 </div>
                 <button class="btn-print-single" onclick="imprimirFardoIndividual(${index})">🖨️ Imprimir</button>
             `;
