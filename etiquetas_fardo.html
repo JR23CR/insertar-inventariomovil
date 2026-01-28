@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Etiquetas por Fardo</title>
+    <script src="formato_etiqueta_producto_terminado.js"></script>
     <style>
         :root {
             --primary: #1A237E;
@@ -309,67 +310,8 @@
     }
 
     async function enviarComandoEtiqueta(f) {
-        const encoder = new TextEncoder();
-        let cmd = "";
-
-        // Configuración 4x3 pulgadas
-        cmd += "SIZE 4,3\r\n"; 
-        cmd += "GAP 0.12,0\r\n";
-        cmd += "DIRECTION 1\r\n";
-        cmd += "CLS\r\n";
-        cmd += "DENSITY 12\r\n";
-
-        // Código de Barras (Fardo No)
-        cmd += `BARCODE 60,20,"128",60,1,0,3,3,"${f.fardoNo}"\r\n`;
-        
-        // Encabezados
-        cmd += `TEXT 300,125,"3",0,1,1,2,"Lote: ${f.lote}"\r\n`;
-        cmd += `TEXT 350,45,"3",0,1,1,2,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`;
-
-        cmd += `BAR 40,155,720,2\r\n`;
-
-        // Detalles Producto
-        cmd += `TEXT 266,175,"3",0,1,1,2,"${f.producto}"\r\n`;
-        cmd += `TEXT 206,210,"3",0,1,1,2,"${f.grosor} x ${f.ancho} pulg  -  ${f.especie}"\r\n`;
-
-        cmd += `BAR 40,240,720,2\r\n`;
-
-        // Tabla de Piezas (Si hay detalles)
-        cmd += `TEXT 60,260,"3",0,1,1,"LARGO"\r\n`;
-        cmd += `TEXT 314,260,"3",0,1,1,"PIEZAS"\r\n`;
-        cmd += `TEXT 650,260,"3",0,1,1,"M2"\r\n`;
-
-        let y = 290;
-        if (f.detalles && f.detalles.length > 0) {
-            f.detalles.forEach(d => {
-                if (y < 500) {
-                    const m2_linea = d.piezas * (d.largo * 0.3048) * (f.ancho * 0.0254); // Cálculo aprox si no viene
-                    cmd += `TEXT 60,${y},"3",0,1,1,"${d.largo}"\r\n`;
-                    cmd += `TEXT 350,${y},"3",0,1,1,"${d.piezas}"\r\n`;
-                    cmd += `TEXT 650,${y},"3",0,1,1,"${m2_linea.toFixed(2)}"\r\n`;
-                    y += 35;
-                }
-            });
-        } else {
-            cmd += `TEXT 300,350,"3",0,1,1,"(Detalle no disponible)"\r\n`;
-        }
-
-        // Totales
-        cmd += `BAR 40,510,720,2\r\n`;
-        // Calcular total piezas si no viene
-        const totalPzs = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
-        cmd += `TEXT 158,540,"3",0,1,1,"TOTAL PIEZAS: ${totalPzs > 0 ? totalPzs : '-'}"\r\n`;
-        cmd += `TEXT 532,540,"3",0,1,1,3,"TOTAL: ${f.m2} M2"\r\n`;
-
-        cmd += "PRINT 1,1\r\n";
-
-        // Enviar en trozos
-        const encodedData = encoder.encode(cmd);
-        const CHUNK_SIZE = 50;
-        for (let i = 0; i < encodedData.length; i += CHUNK_SIZE) {
-            await printCharacteristic.writeValue(encodedData.slice(i, i + CHUNK_SIZE));
-            await new Promise(resolve => setTimeout(resolve, 20));
-        }
+        // Usar la función compartida del archivo externo
+        await imprimirEtiquetaTerminado(printCharacteristic, f);
     }
 </script>
 

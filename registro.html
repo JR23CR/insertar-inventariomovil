@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    <script src="formato_etiqueta_producto_terminado.js"></script>
     <style>
         :root {
             --primary: #1A237E; /* Azul Marino Ticket */
@@ -785,75 +786,10 @@
         }
 
         const f = fardosData[index];
-        const encoder = new TextEncoder();
         
-        let cmd = "";
-        // Adjusting for 4x3 inch labels
-        cmd += "SIZE 4,3\r\n"; 
-        cmd += "GAP 0.12,0\r\n";
-        cmd += "DIRECTION 1\r\n";
-        cmd += "CLS\r\n";
-        cmd += "DENSITY 12\r\n";
-
-        // --- SECCIÓN SUPERIOR ---
-        // El código de barras es solo el número de fardo para producto terminado.
-        const barcodeId = f.fardoNo;
-        // Volver a un diseño centrado, que es el preferido por el usuario.
-        // BARCODE [X,Y,"TYPE",H,READABLE,ROT,NARROW,WIDE,ALIGNMENT,"CONTENT"]
-        // Quitamos el ",2," antes de la variable
-        cmd += `BARCODE 60,20,"128",60,1,0,3,3,"${barcodeId}"\r\n`;        // TEXT [X,Y,"FONT",ROT,X-MULT,Y-MULT,ALIGNMENT,"TEXT"]
-        cmd += `TEXT 300,125,"3",0,1,1,2,"Lote: ${f.lote}"\r\n`; // Centrado
-        // --- SECCION FARDO ---
-        cmd += `TEXT 350,45,"3",0,1,1,2,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`; // Centrado
-
-
-        // Primera línea divisoria
-        cmd += `BAR 40,155,720,2\r\n`;
-
-        // --- SECCIÓN CENTRAL ---
-        cmd += `TEXT 266,175,"3",0,1,1,2,"${f.producto}"\r\n`;
-        cmd += `TEXT 206,210,"3",0,1,1,2,"${f.grosor} x ${f.ancho} pulg  -  ${f.especie}"\r\n`;
-
-        // Segunda línea divisoria
-        cmd += `BAR 40,240,720,2\r\n`;
-
-        // --- ENCABEZADO DE TABLA ---
-        cmd += `TEXT 60,260,"3",0,1,1,"LARGO"\r\n`;
-        cmd += `TEXT 314,260,"3",0,1,1,"PIEZAS"\r\n`;
-        cmd += `TEXT 650,260,"3",0,1,1,"M2"\r\n`;
-
-        // --- DATOS DE LA TABLA ---
-        let y = 290;
-        f.detalles.forEach(d => {
-            if (y < 500) { // Limitar filas para que quepan en etiqueta de 3"
-                const m2_linea = d.piezas * (d.largo * 0.3048) * (f.ancho * 0.0254);
-
-                cmd += `TEXT 60,${y},"3",0,1,1,"${d.largo.toFixed(2)}"\r\n`;
-                cmd += `TEXT 350,${y},"3",0,1,1,"${d.piezas}"\r\n`;
-                cmd += `TEXT 650,${y},"3",0,1,1,"${m2_linea.toFixed(2)}"\r\n`;
-                y += 35; // Incremento reducido para más filas
-            }
-        });
-
-        // --- TOTALES ---
-        cmd += `BAR 40,510,720,2\r\n`;
-        const fardoTotalPiezas = f.detalles.reduce((acc, d) => acc + d.piezas, 0);
-        cmd += `TEXT 158,540,"3",0,1,1,"TOTAL PIEZAS: ${fardoTotalPiezas}"\r\n`;
-        // Mover total a la izquierda para que no se corte y alinear a la derecha.
-        cmd += `TEXT 532,540,"3",0,1,1,3,"TOTAL: ${f.m2} M2"\r\n`;
-
-        cmd += "PRINT 1,1\r\n";
-
-        const encodedData = encoder.encode(cmd);
-        
-        const CHUNK_SIZE = 50; 
-
         try {
-            for (let i = 0; i < encodedData.length; i += CHUNK_SIZE) {
-                const chunk = encodedData.slice(i, i + CHUNK_SIZE);
-                await printCharacteristic.writeValue(chunk);
-                await new Promise(resolve => setTimeout(resolve, 20));
-            }
+            // Usar la función compartida del archivo externo
+            await imprimirEtiquetaTerminado(printCharacteristic, f);
         } catch (error) {
             alert("Error enviando datos: " + error);
             conectarBluetooth();
