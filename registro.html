@@ -787,76 +787,73 @@
         const f = fardosData[index];
         const encoder = new TextEncoder();
         
-        // --- CAMBIO A LENGUAJE TSPL (Específico para Etiquetas) ---
-        // Si salía en blanco, es porque la impresora esperaba este formato.
-        
         let cmd = "";
-        // 1. Configurar tamaño 4x3 pulgadas
-        cmd += "SIZE 4,3\r\n"; 
-        cmd += "GAP 2 mm,0\r\n"; // Espacio entre etiquetas
+        // Applying new format based on user request for "producto terminado"
+        cmd += "SIZE 4,4\r\n"; 
+        cmd += "GAP 0.12,0\r\n";
         cmd += "DIRECTION 1\r\n"; // Dirección de impresión
         cmd += "CLS\r\n";        // Limpiar memoria
         cmd += "DENSITY 12\r\n"; // <--- IMPORTANTE: Aumentar oscuridad (0-15)
         
-        // 2. Dibujar contenido (Coordenadas X, Y)
-        // TEXT x,y,"font",rotacion,anchoX,altoY,"texto"
-        
-        // --- CÓDIGO DE BARRAS (Centrado, Más largo, Sin números) ---
-        // BARCODE X,Y,"128",height,human_readable,rotation,narrow,wide,"content"
-        // human_readable=0 (Quitar número)
-        // height=100 (Más alto)
-        // narrow=3, wide=3 (Más ancho/largo horizontalmente)
-        // X=150 (Ajustado para centrar el código más ancho)
-        cmd += `BARCODE 150,20,"128",60,0,0,3,3,"${f.fardoNo}"\r\n`;
+        // --- MARCO EXTERIOR ---
+        cmd += "BOX 10,10,790,790,3\r\n";
 
-        // Lote (Centrado aprox)
-        cmd += `TEXT 280,130,"3",0,1,1,"Lote: ${f.lote}"\r\n`;
+        // --- ENCABEZADO ---
+        const barcodeId = `${f.lote}-${f.fardoNo}`;
+        // BARCODE X,Y,"TYPE",HEIGHT,HUMAN_READABLE,ROTATION,NARROW,WIDE,[ALIGNMENT],"CONTENT"
+        cmd += `BARCODE 400,30,"128",45,1,0,2,2,2,"${barcodeId}"\r\n`; // Added center alignment
+        // TEXT X,Y,"FONT",ROTATION,X-MULT,Y-MULT,[ALIGNMENT],"CONTENT"
+        cmd += `TEXT 400,90,"3",0,1,1,2,"Lote: ${f.lote}"\r\n`;
+        cmd += `TEXT 400,135,"3",0,1,1,2,"FARDO: ${f.fardoNo}   -   ${f.m2} M2"\r\n`;
+        cmd += `BAR 10,185,780,2\r\n`;
 
-        // Fardo y M2 (Centrados en una línea)
-        cmd += `TEXT 180,170,"3",0,1,1,"Fardo: ${f.fardoNo}  -  ${f.m2} M2"\r\n`;
-        
-        // Línea separadora
-        cmd += `BAR 30,210, 750, 4\r\n`;
-        
-        // Detalles del producto (Centrado aprox)
-        cmd += `TEXT 250,230,"3",0,1,1,"${f.producto}"\r\n`;
-        // Especie y medidas
-        cmd += `TEXT 150,270,"3",0,1,1,"${f.grosor} x ${f.ancho} pulg - ${f.especie}"\r\n`;
-        
-        cmd += `BAR 30,310, 750, 4\r\n`;
-        
-        // Tabla de Piezas (Centrar encabezados en sus mitades)
-        cmd += `TEXT 150,330,"3",0,1,1,"Piezas"\r\n`;
-        cmd += `TEXT 550,330,"3",0,1,1,"Largo"\r\n`;
-        
-        // Filas dinámicas
+        // --- PRODUCTO ---
+        cmd += `TEXT 400,210,"3",0,1,1,2,"${f.producto.toUpperCase()}"\r\n`;
+        cmd += `TEXT 400,250,"3",0,1,1,2,"${f.grosor} x ${f.ancho} pulg - ${f.especie.toUpperCase()}"\r\n`;
+        cmd += `BAR 10,290,780,2\r\n`;
+
+        // --- ENCABEZADO DE TABLA ---
+        cmd += `TEXT 100,315,"3",0,1,1,"LARGO"\r\n`; // Left align is default
+        cmd += `TEXT 400,315,"3",0,1,1,2,"PIEZAS"\r\n`;
+        cmd += `TEXT 700,315,"3",0,1,1,2,"M2"\r\n`;
+        cmd += `BAR 10,345,780,1\r\n`;
+
+        // --- DATOS DE LA TABLA ---
         let y = 370;
+        let totalPiezas = 0;
         f.detalles.forEach(d => {
-            if(y < 580) { // Evitar imprimir fuera de la etiqueta
-                cmd += `TEXT 170,${y},"3",0,1,1,"${d.piezas}"\r\n`;
-                cmd += `TEXT 570,${y},"3",0,1,1,"${d.largo}"\r\n`;
-                y += 40; // Más espacio entre líneas por fuente más grande
+            if (y < 500) { // Limit rows to fit on label
+                const m2_linea = d.piezas * (d.largo * 0.3048) * (f.ancho * 0.0254);
+                totalPiezas += d.piezas;
+
+                cmd += `TEXT 100,${y},"3",0,1,1,"${d.largo.toFixed(2)}"\r\n`;
+                cmd += `TEXT 400,${y},"3",0,1,1,2,"${d.piezas}"\r\n`;
+                cmd += `TEXT 700,${y},"3",0,1,1,2,"${m2_linea.toFixed(2)}"\r\n`;
+                y += 45;
             }
         });
 
-        cmd += "PRINT 1\r\n"; // Orden final de imprimir
+        // --- TOTALES ---
+        cmd += `BAR 10,520,780,2\r\n`;
+        cmd += `TEXT 60,550,"3",0,1,1,"TOTAL PIEZAS: ${totalPiezas}"\r\n`;
+        const totalM2Text = `TOTAL: ${f.m2} M2`;
+        // Right align total M2
+        cmd += `TEXT 740,550,"3",0,1,1,3,"${totalM2Text}"\r\n`;
+
+        cmd += "PRINT 1,1\r\n";
 
         const encodedData = encoder.encode(cmd);
         
-        // IMPORTANTE: Enviar en trozos (chunks) pequeños para Bluetooth LE
-        // Esto evita que la impresora se sature y se detenga a medias
         const CHUNK_SIZE = 50; 
 
         try {
             for (let i = 0; i < encodedData.length; i += CHUNK_SIZE) {
                 const chunk = encodedData.slice(i, i + CHUNK_SIZE);
                 await printCharacteristic.writeValue(chunk);
-                // Pequeña pausa para no saturar el buffer
                 await new Promise(resolve => setTimeout(resolve, 20));
             }
         } catch (error) {
             alert("Error enviando datos: " + error);
-            // Si falla, intentamos reconectar
             conectarBluetooth();
         }
     }
