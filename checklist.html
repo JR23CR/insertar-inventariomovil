@@ -122,8 +122,14 @@
         })
         .catch(error => {
             console.error(error);
-            status.innerText = "❌ " + error.message;
+            let friendlyMessage = "❌ " + error.message;
+            if (error.message.includes("Failed to fetch")) {
+                friendlyMessage += "\n\nRevisa tu conexión a internet o la configuración de la implementación del script de Google.";
+            }
+            status.innerText = friendlyMessage;
             status.style.color = "#c0392b";
+            status.style.whiteSpace = 'pre-wrap';
+            status.style.lineHeight = '1.4';
         });
     }
 

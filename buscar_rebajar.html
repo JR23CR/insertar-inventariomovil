@@ -6,61 +6,65 @@
     <title>Buscar y Rebajar - Madera Aserrada</title>
     <style>
         :root {
-            --primary: #2c3e50;
-            --accent: #2980b9;
-            --bg: #f4f7f6;
+            --primary: #1A237E;
+            --bg: #F5F7F9;
+            --card-bg: #FFFFFF;
+            --text-dark: #2c3e50;
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             margin: 0;
-            padding: 15px;
-            color: var(--primary);
+            padding: 20px;
+            color: var(--text-dark);
         }
         .container { max-width: 600px; margin: 0 auto; }
-        h2 { text-align: center; font-size: 1.2rem; margin-bottom: 20px; }
+        h2 { text-align: center; font-size: 1.5rem; margin-bottom: 20px; color: var(--primary); }
         
         .card {
             background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             margin-bottom: 20px;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 12px;
             margin-top: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
             box-sizing: border-box;
             font-size: 1.1rem;
             text-align: center;
+            background-color: #fafafa;
+            outline: none;
         }
+        input:focus, select:focus { background-color: #fff; border-color: var(--primary); }
 
         button {
             width: 100%;
-            padding: 12px;
-            margin-top: 10px;
+            padding: 16px;
+            margin-top: 15px;
             border: none;
-            border-radius: 8px;
+            border-radius: 15px;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
         }
-        .btn-search { background-color: var(--accent); color: white; }
+        .btn-search { background-color: var(--primary); color: white; }
         .btn-delete { background-color: #c0392b; color: white; margin-top: 20px; }
-        .btn-back { background-color: #7f8c8d; color: white; text-decoration: none; display: block; text-align: center; margin-top: 20px; padding: 12px; border-radius: 8px; }
+        .btn-back { background-color: #e0e6ed; color: var(--text-dark); text-decoration: none; display: block; text-align: center; margin-top: 20px; padding: 15px; border-radius: 15px; font-weight: bold; }
 
         #status { font-size: 0.9rem; color: #666; margin-bottom: 10px; text-align: center; }
 
         .detail-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        .detail-table th, .detail-table td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        .detail-table th { background-color: #f2f2f2; }
+        .detail-table th, .detail-table td { border: 1px solid #eee; padding: 8px; text-align: center; }
+        .detail-table th { background-color: #f8f9fa; color: #95a5a6; }
         
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 0.9rem; }
-        .info-item { background: #f8f9fa; padding: 8px; border-radius: 6px; }
+        .info-item { background: #f8f9fa; padding: 10px; border-radius: 10px; }
         .info-label { font-weight: bold; display: block; color: #7f8c8d; font-size: 0.8rem; }
     </style>
 </head>
@@ -103,7 +107,16 @@
             
             // Pedimos explícitamente la hoja "MADERA ASERRADA"
             fetch(GOOGLE_SCRIPT_URL + "?sheet=MADERA ASERRADA")
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error(`Error de red: ${res.status}`);
+                return res.text();
+            })
+            .then(text => {
+                try { return JSON.parse(text); }
+                catch (e) {
+                    throw new Error("Respuesta inválida del script. Revisa la implementación del script de Google.");
+                }
+            })
             .then(data => {
                 inventario = data;
                 status.innerText = `✅ Datos cargados: ${data.length} registros.`;
@@ -123,8 +136,13 @@
             })
             .catch(err => {
                 console.error(err);
-                status.innerText = "❌ Error cargando datos.";
+                let friendlyMessage = "❌ " + err.message;
+                if (err.message.includes("Failed to fetch")) {
+                    friendlyMessage += "\nRevisa tu conexión o la configuración del script.";
+                }
+                status.innerText = friendlyMessage;
                 status.style.color = "#c0392b";
+                status.style.whiteSpace = 'pre-wrap';
             });
         }
 

@@ -154,6 +154,11 @@
             width: 100%; border-radius: 10px; margin-top: 15px; font-weight: bold;
             cursor: not-allowed; opacity: 0.7; transition: all 0.3s;
         }
+        .btn-map {
+            background-color: #3498db; /* Un azul diferente para el mapa */
+            color: white; border: none; padding: 12px;
+            width: 100%; border-radius: 10px; margin-top: 10px; font-weight: bold;
+        }
         .btn-gps { background-color: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; width: 100%; }
     </style>
 </head>
@@ -163,7 +168,7 @@
     <h2>📂 Base de Datos Resumida</h2>
 
     <div class="card">
-        <input type="text" id="searchInput" placeholder="🔍 Buscar por Fardo, Especie o Calidad..." onkeyup="filtrarTabla()">
+        <input type="text" id="searchInput" placeholder="🔍 Buscar por Fardo, Especie o Calidad..." oninput="filtrarTabla()">
     </div>
 
     <div class="card" style="padding: 0; overflow: hidden;">
@@ -210,6 +215,7 @@
             </div>
 
             <button id="btnSaveLoc" class="btn-save-loc" onclick="guardarUbicacion()" disabled>💾 Guardar Ubicación</button>
+            <button id="btnMap" class="btn-map" onclick="verEnMapa()" disabled>🗺️ Ver en Mapa</button>
         </div>
     </div>
 </div>
@@ -223,13 +229,26 @@
 
     window.onload = function() {
         fetch(GOOGLE_SCRIPT_URL + "?sheet=MADERA ASERRADA")
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error(`Error de red: ${res.status} ${res.statusText}`);
+            return res.text(); // Leemos como texto para poder inspeccionar la respuesta.
+        })
+        .then(text => {
+            try {
+                // Intentamos convertir el texto a JSON.
+                return JSON.parse(text);
+            } catch (e) {
+                // Si falla, es porque Google devolvió una página de error HTML.
+                console.error("La respuesta del servidor no es JSON válido:", text);
+                throw new Error("El script de Google devolvió un error. Revisa que la implementación esté activa y con acceso para 'Cualquier persona'.");
+            }
+        })
         .then(data => {
             procesarDatos(data);
         })
         .catch(err => {
-            document.getElementById('loading').innerText = "❌ Error al cargar datos.";
-            console.error(err);
+            document.getElementById('loading').innerText = `❌ ${err.message}`;
+            document.getElementById('loading').style.color = 'red';
         });
     };
 
@@ -298,13 +317,25 @@
     }
 
     function filtrarTabla() {
-        const texto = document.getElementById('searchInput').value.toLowerCase();
+        const texto = document.getElementById('searchInput').value.toLowerCase().trim();
+        
+        // Si la caja de búsqueda está vacía, muestra la lista completa y detiene la función.
+        if (!texto) {
+            renderizarTabla(inventarioCompleto);
+            return;
+        }
         
         const filtrados = inventarioCompleto.filter(item => {
-            return String(item.fardo).toLowerCase().includes(texto) ||
-                   item.especie.toLowerCase().includes(texto) ||
-                   item.calidad.toLowerCase().includes(texto) ||
-                   item.ubicacion.toLowerCase().includes(texto);
+            // Se asegura que las propiedades existan y sean texto antes de buscar en ellas.
+            const fardo = String(item.fardo || '').toLowerCase();
+            const especie = String(item.especie || '').toLowerCase();
+            const calidad = String(item.calidad || '').toLowerCase();
+            const ubicacion = String(item.ubicacion || '').toLowerCase();
+
+            return fardo.includes(texto) ||
+                   especie.includes(texto) ||
+                   calidad.includes(texto) ||
+                   ubicacion.includes(texto);
         });
 
         renderizarTabla(filtrados);
@@ -328,6 +359,11 @@
         document.getElementById('btnSaveLoc').disabled = true;
         document.getElementById('btnSaveLoc').style.backgroundColor = "#95a5a6";
         document.getElementById('btnSaveLoc').innerText = "💾 Guardar Ubicación";
+        
+        const btnMap = document.getElementById('btnMap');
+        btnMap.disabled = !item.ubicacion || item.ubicacion === 'No definida';
+        btnMap.style.opacity = btnMap.disabled ? '0.7' : '1';
+        btnMap.style.cursor = btnMap.disabled ? 'not-allowed' : 'pointer';
         
         document.getElementById('modalDetalle').style.display = 'flex';
     }
@@ -422,16 +458,41 @@
             body: JSON.stringify(payload)
         })
         .then(res => {
-            alert(`✅ Ubicación actualizada para Fardo #${currentFardo.fardo}`);
-            cerrarModal();
-            // Recargar datos para ver cambios
-            window.onload(); 
+            if (!res.ok) throw new Error("Error de red al guardar.");
+            return res.json();
+        })
+        .then(data => {
+            if (data.result === "success") {
+                alert(`✅ Ubicación actualizada para Fardo #${currentFardo.fardo}`);
+                cerrarModal();
+                // Recargar datos para ver cambios
+                location.reload(); 
+            } else {
+                throw new Error(data.message || "El script devolvió un error.");
+            }
         })
         .catch(err => {
             alert("❌ Error al guardar: " + err);
             btn.innerText = "💾 Reintentar Guardar";
             btn.disabled = false;
         });
+    }
+
+    function verEnMapa() {
+        if (!currentFardo || !currentFardo.ubicacion || currentFardo.ubicacion === 'No definida') {
+            alert("No hay una ubicación definida para este fardo.");
+            return;
+        }
+
+        // Extraer Latitud y Longitud del formato "Lat, Lon (Acc: Xm)"
+        const match = currentFardo.ubicacion.match(/(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+        if (match && match.length >= 3) {
+            const lat = match[1];
+            const lon = match[2];
+            window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+        } else {
+            alert("Formato de ubicación no reconocido: " + currentFardo.ubicacion);
+        }
     }
 </script>
 

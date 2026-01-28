@@ -78,7 +78,18 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJm67IZXi_zHsxQv3mqosqb6-RyKp4-j-h-kqdP153HTN8t6lt7BPE5BrwSzphArkx/exec";
 
         fetch(GOOGLE_SCRIPT_URL + "?sheet=MADERA ASERRADA")
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Error de red al cargar datos del gráfico.');
+            return res.text();
+        })
+        .then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error("Error al procesar datos del gráfico. El script no devolvió JSON.");
+                return []; // Devolvemos un array vacío para que no se rompa el gráfico.
+            }
+        })
         .then(data => {
             // Agrupar por Especie
             const especies = {};
