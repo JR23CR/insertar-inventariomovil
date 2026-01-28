@@ -145,7 +145,7 @@
 
     function formatearGrosor(valor) {
         // Corrección específica para Grosores que Sheets convirtió en fecha (ej: 3/4 -> 03/04/2026)
-        if (typeof valor === 'string' && valor.includes('T') && valor.includes('Z')) {
+        if (typeof valor === 'string' && valor.includes('T') && !isNaN(Date.parse(valor))) {
             const fecha = new Date(valor);
             // Extraer solo día y mes para reconstruir la fracción (ej: 3/4)
             return `${fecha.getDate()}/${fecha.getMonth() + 1}`;
